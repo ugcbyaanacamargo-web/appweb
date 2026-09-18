@@ -55,7 +55,7 @@ describe('document rules', () => {
   });
 
   it('R8 reprices an unsent document with the latest local price', () => {
-    const repriced = repriceAndValidateLocal(doc(), products, true);
+    const repriced = repriceAndValidateLocal(doc({ supplemental: {} }), products, true);
     expect(repriced.items).toEqual([{ productId: 'p1', quantity: 10, unitPrice: 12 }]);
     expect(documentTotal(repriced)).toBe(120);
   });
