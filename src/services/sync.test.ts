@@ -144,6 +144,19 @@ describe('manual commercial synchronization', () => {
     expect(await db!.products.get([scopeKey, 'old-product'])).toBeDefined();
   });
 
+  it('allows a previously blocked account to synchronize after the server is regularized', async () => {
+    await seed();
+    const existing = await db!.contexts.get(scopeKey);
+    await db!.contexts.put({ ...existing!, accountBlocked: true });
+    const gateway = new SyncGateway(snapshot(77));
+
+    const result = await synchronizeCommercialBase({ db: db!, gateway, context, online: true });
+
+    expect(result.ok).toBe(true);
+    expect((await db!.products.get([scopeKey, 'p1']))?.price).toBe(77);
+    expect((await db!.contexts.get(scopeKey))?.accountBlocked).toBe(false);
+  });
+
   it('offline sync fails without changing last successful sync', async () => {
     await seed();
     const gateway = new SyncGateway(snapshot());
