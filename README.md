@@ -2,22 +2,42 @@
 
 Repositório-orquestrador para desenvolvimento de aplicações web assistido por agentes de IA.
 
-A regra deste projeto é simples: **não recriar do zero aquilo que já existe e é mantido por projetos fortes do ecossistema**. As capacidades principais ficam ligadas como repositórios completos via Git submodule e fixadas em commits específicos.
+A regra central é: **usar primeiro capacidades maduras que já existem, manter o contexto no próprio repositório e provar mudanças antes de integrar**.
 
-## Estrutura
+## Como o motor trabalha
 
-- `vendor/engines/gstack` — fluxo de produto, engenharia, review, QA, segurança e release.
-- `vendor/engines/superpowers` — metodologia de desenvolvimento e skills compostas.
+Para todo trabalho futuro no site:
+
+1. ler `AGENTS.md`;
+2. restaurar `PROJECT_STATE.md` e `DECISIONS.md`;
+3. escolher as skills em `docs/SKILL_ROUTER.md`;
+4. pesquisar semanticamente o código e padrões existentes;
+5. trabalhar em branch isolada;
+6. revisar/testar/validar;
+7. persistir o novo estado do projeto.
+
+Isso dá continuidade entre sessões sem depender apenas do histórico da conversa.
+
+## Estrutura do motor
+
+- `vendor/engines/gstack` — produto, engenharia, review, QA, segurança, contexto e release.
+- `vendor/engines/superpowers` — metodologia, planejamento, TDD, debugging e verificação.
 - `vendor/skills/anthropic` — coleção pública de Agent Skills e exemplos de especificação.
-- `vendor/skills/engineering` — skills de engenharia de software para agentes.
+- `vendor/skills/engineering` — UI, contexto, API, revisão, segurança, performance e engenharia.
 - `vendor/skills/skills-cli` — CLI aberta para descobrir/instalar/usar Agent Skills.
-- `vendor/skills/vercel-agent-skills` — skills oficiais da Vercel para React/Next.js, performance, UI e documentação.
-- `vendor/memory/mem0` — camada de memória persistente para agentes e aplicações.
-- `vendor/mcp/reference-servers` — servidores MCP de referência para ferramentas e dados.
-- `vendor/app-builder/bolt-diy` — ambiente multi-LLM para gerar, executar e publicar aplicações web full-stack.
-- `vendor/app-builder/dyad` — construtor local e ativo de apps por IA, alternativa a v0/Lovable/Replit/Bolt.
+- `vendor/skills/vercel-agent-skills` — React/Next.js, performance, UI e web design guidelines.
+- `vendor/memory/mem0` — memória persistente para futura integração na aplicação.
+- `vendor/mcp/reference-servers` — servidores MCP de referência.
+- `vendor/app-builder/bolt-diy` — construtor full-stack multi-LLM.
+- `vendor/app-builder/dyad` — construtor local de apps por IA.
 
-Veja `ENGINE_MANIFEST.md` para commits, estrelas observadas e licenças.
+## Arquivos de continuidade
+
+- `PROJECT_STATE.md` — onde o projeto está agora.
+- `DECISIONS.md` — decisões que não devem ser esquecidas/contraditas.
+- `docs/SKILL_ROUTER.md` — quais capacidades usar para cada tipo de trabalho.
+- `AGENTS.md` — contrato obrigatório para agentes.
+- `ENGINE_MANIFEST.md` — versões/SHAs dos projetos upstream.
 
 ## Clonar corretamente
 
@@ -27,20 +47,23 @@ cd appweb
 git submodule update --init --recursive
 ```
 
-## Regra de atualização
+## Validação do motor
 
-Os submódulos são deliberadamente **fixados por commit**. Não apontamos cegamente para o último `main`. Uma atualização deve primeiro ser revisada e depois alterar o gitlink correspondente.
+```bash
+python scripts/validate_engine.py
+```
+
+O GitHub Actions executa essa validação automaticamente em pushes e pull requests.
 
 ## Importante sobre ChatGPT
 
-Guardar esses projetos aqui **não instala automaticamente essas capacidades dentro do runtime do ChatGPT**.
+Guardar projetos dentro do GitHub **não instala automaticamente essas capacidades no runtime do ChatGPT**.
 
-Neste projeto, quando o ChatGPT tiver os plugins/skills correspondentes conectados, ele pode usar essas capacidades diretamente. O conteúdo em `vendor/` funciona como fonte persistente, referência auditável e base portátil para outros agentes/ambientes.
-
-Leia `docs/RUNTIME.md` antes de assumir que um componente está executável.
+O repositório é a fonte persistente. A execução depende das ferramentas/skills realmente disponíveis no host. `docs/RUNTIME.md` explica essa separação.
 
 ## Segurança e licenças
 
-- `modelcontextprotocol/servers` declara que seus servidores são implementações de referência; não trate isso como produção sem revisão de segurança.
-- `anthropics/skills`, `vercel-labs/agent-skills` e `dyad` exigem atenção aos avisos/licenças presentes no próprio upstream.
-- Não copie código de submódulo para o produto final sem conferir a licença correspondente.
+- MCP reference servers não são considerados produção sem revisão de segurança.
+- Repositórios com licença mista/indefinida exigem leitura do aviso upstream antes de copiar código.
+- Submódulos ficam fixados por commit e não avançam automaticamente.
+- Segredos nunca entram em `PROJECT_STATE.md`, `DECISIONS.md` ou commits.
