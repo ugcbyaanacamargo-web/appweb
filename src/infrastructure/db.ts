@@ -70,14 +70,48 @@ export async function replaceCommercialSnapshot(
         throw new Error('LOCAL_CONTEXT_NOT_INITIALIZED');
       }
 
+      const previousCustomers = await db.customers
+        .where('scopeKey')
+        .equals(scopeKey)
+        .toArray();
+
+      const normalizeTaxId = (value: string) => value.replace(/\\D/g, '');
+      const localByTaxId = new Map(
+        previousCustomers
+          .map(customer => [normalizeTaxId(customer.taxId), customer] as const)
+          .filter(([taxId]) => taxId.length > 0)
+      );
+      const matchedLocalIds = new Set<string>();
+
+      const customers = snapshot.customers.map(serverCustomer => {
+        const taxId = normalizeTaxId(serverCustomer.taxId);
+        const local = taxId ? localByTaxId.get(taxId) : undefined;
+        if (local) {
+          matchedLocalIds.add(local.id);
+          return {
+            ...serverCustomer,
+            id: local.id,
+            officialId: serverCustomer.officialId ?? local.officialId ?? serverCustomer.id,
+            scopeKey,
+            pendingSync: false
+          };
+        }
+        return {
+          ...serverCustomer,
+          scopeKey,
+          pendingSync: false
+        };
+      });
+
+      for (const local of previousCustomers) {
+        if (local.pendingSync && !matchedLocalIds.has(local.id)) {
+          customers.push(local);
+        }
+      }
+
       await db.customers.where('scopeKey').equals(scopeKey).delete();
       await db.products.where('scopeKey').equals(scopeKey).delete();
 
-      const customers = snapshot.customers.map(customer => ({
-        ...customer,
-        scopeKey,
-        pendingSync: false
-      }));
       const products = snapshot.products.map(product => ({ ...product, scopeKey }));
 
       if (customers.length) await db.customers.bulkPut(customers);
