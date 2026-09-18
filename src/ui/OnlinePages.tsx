@@ -1,8 +1,16 @@
+import type { ReactNode } from 'react';
 import { useRuntime } from '../app/AppContext';
+import { pageRequiresOnline, type MainPage } from './menu';
 
-function OnlineGate({ children }: { children: React.ReactNode }) {
+function OnlineGate({
+  page,
+  children
+}: {
+  page: Extract<MainPage, 'reports' | 'online'>;
+  children: ReactNode;
+}) {
   const runtime = useRuntime();
-  if (!runtime.online) {
+  if (pageRequiresOnline(page) && !runtime.online) {
     return (
       <div className="offline-gate">
         <strong>Conexão necessária</strong>
@@ -21,7 +29,7 @@ export function Reports() {
         <h1>Relatórios e Comissões</h1>
         <p>Área destinada exclusivamente aos resultados e comissões do vendedor autenticado.</p>
       </div>
-      <OnlineGate>
+      <OnlineGate page="reports">
         <div className="info-card">
           <strong>Integração preparada</strong>
           <p>O App já aplica a exigência de conexão. Os dados reais serão fornecidos pelo endpoint de Relatórios e Comissões quando a API Óris360° for conectada.</p>
@@ -40,7 +48,7 @@ export function OnlineSystem() {
         <h1>Sistema Online</h1>
         <p>Mesmo usuário e mesma empresa ativa, respeitando as permissões da plataforma web.</p>
       </div>
-      <OnlineGate>
+      <OnlineGate page="online">
         {runtime.context.onlineBaseUrl ? (
           <a className="button primary link-button" href={runtime.context.onlineBaseUrl} target="_blank" rel="noreferrer">
             ABRIR SISTEMA ONLINE
