@@ -13,6 +13,7 @@ class MemoryStorage {
   getItem(key:string){ return this.data.get(key) ?? null; }
   setItem(key:string,value:string){ this.data.set(key,value); }
   removeItem(key:string){ this.data.delete(key); }
+  values(){ return [...this.data.values()]; }
 }
 
 const auth:AuthResult={
@@ -28,6 +29,15 @@ describe('offline authentication cache',()=>{
     expect((await verifyOfflineCredentials(storage,'vendedor@demo.local','secret'))?.user.id).toBe('u1');
     expect(await verifyOfflineCredentials(storage,'vendedor@demo.local','wrong')).toBeNull();
     expect(await verifyOfflineCredentials(storage,'unknown@demo.local','secret')).toBeNull();
+  });
+
+  it('encrypts persistent offline auth so token and password are not stored in plaintext',async()=>{
+    const storage=new MemoryStorage();
+    await cacheOfflineCredentials(storage,'vendedor@demo.local','secret',auth);
+    const raw=storage.values().join('\n');
+    expect(raw).not.toContain('secret');
+    expect(raw).not.toContain('demo-token');
+    expect(raw).not.toContain('"user"');
   });
 
   it('R15 logout clears only live session and not the offline credential cache',async()=>{
