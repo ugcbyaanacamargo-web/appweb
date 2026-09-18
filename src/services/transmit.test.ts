@@ -22,6 +22,7 @@ class SendGateway implements OrisGateway {
   failSend = false;
   acceptedQuantity = 6;
   seenKeys = new Map<string, SendDocumentResult>();
+  lastDocument?: SalesDocument;
 
   async authenticate(_input: AccountInput): Promise<AuthResult> { throw new Error('unused'); }
   async createAccount(_input: AccountInput): Promise<AuthResult> { throw new Error('unused'); }
@@ -32,6 +33,7 @@ class SendGateway implements OrisGateway {
   async fetchCommercialSnapshot(): Promise<CommercialSnapshot> { throw new Error('unused'); }
   async sendDocument(_context: GatewayContext, document: SalesDocument): Promise<SendDocumentResult> {
     this.documentCalls++;
+    this.lastDocument = document;
     if (this.failSend) throw new Error('timeout');
     const existing = this.seenKeys.get(document.idempotencyKey);
     if (existing) return existing;
@@ -107,6 +109,15 @@ describe('explicit document transmission',()=>{
     expect(stored?.state).toBe('sent');
     expect(stored?.officialNumber).toBe('PD-0001');
     expect(stored?.items).toEqual([{productId:'p1',quantity:6,unitPrice:12}]);
+  });
+
+  it('TEST28 sends the official customer id after syncing a new offline customer',async()=>{
+    await seed('order');
+    const gateway=new SendGateway();
+    const result=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
+    expect(result.ok).toBe(true);
+    expect(gateway.lastDocument?.customerId).toBe('official-customer');
+    expect((await db!.documents.get([scopeKey,'doc1']))?.customerId).toBe('local-c');
   });
 
   it('failure/timeout never marks document sent',async()=>{
