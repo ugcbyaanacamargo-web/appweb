@@ -349,7 +349,7 @@ export function QuoteEditor({ documentId, onBack, onOpenDocument }: QuoteEditorP
           <button className="button primary" onClick={generateOrder}>GERAR PEDIDO</button>
         )}
         {editable && (
-          <button className="button dark" disabled={busy || !customer || document.items.length === 0} onClick={send}>
+          <button className="button dark" disabled={busy || !customer?.active || document.items.length === 0} onClick={send}>
             {busy ? 'ENVIANDO…' : 'ENVIAR PARA O SISTEMA ONLINE'}
           </button>
         )}
