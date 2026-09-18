@@ -28,3 +28,6 @@
 [submodule "vendor/app-builder/dyad"]
 	path = vendor/app-builder/dyad
 	url = https://github.com/dyad-sh/dyad.git
+[submodule "vendor/engines/ecc"]
+	path = vendor/engines/ecc
+	url = https://github.com/affaan-m/ECC.git

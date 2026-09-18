@@ -74,3 +74,36 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** The user selected Netlify and wants a free `*.netlify.app` domain.
 
 **Consequence:** Keep SPA fallback, PWA artifacts and security headers compatible with Netlify. Actual site creation requires access to the user's Netlify account.
+
+
+## 2026-09-18 — Seller PWA alone is not the complete Óris360° platform
+
+**Decision:** Treat the verified seller PWA as one surface of the product, not as the full company system.
+
+**Reason:** Company administration requires central seller, product, customer portfolio, mission, reporting and integration controls that do not exist in the seller-only contract.
+
+**Consequence:** Completion claims for the full platform require a System Online / company-admin surface in addition to the seller PWA.
+
+## 2026-09-18 — System Online will live in the same repository
+
+**Decision:** Build the company/admin surface in appweb while preserving the seller App's fixed ten-item navigation.
+
+**Reason:** This gives the product a coherent end-to-end experience and avoids depending on an unspecified external admin product.
+
+**Consequence:** Seller and admin surfaces share domain contracts but enforce role-based capabilities separately.
+
+## 2026-09-18 — Real cross-device synchronization requires a central backend
+
+**Decision:** Do not represent browser-local DemoOrisGateway storage as real multi-user synchronization.
+
+**Reason:** Static Netlify hosting plus IndexedDB/localStorage cannot provide shared state between different devices/users.
+
+**Consequence:** Demo mode can validate flows, but production seller/company synchronization, Web Push, WhatsApp webhooks, reports and cross-domain SSO require a central API/database.
+
+## 2026-09-18 — ECC joins gstack and Superpowers as a pinned upstream engine
+
+**Decision:** Pin affaan-m/ECC under vendor/engines/ecc and route only the smallest relevant specialized skills through it.
+
+**Reason:** ECC adds useful research, API/backend/frontend, security, e2e, memory and verification capabilities without replacing the existing process engines.
+
+**Consequence:** Do not duplicate runtime hooks/plugins just because complete sources are vendored. Superpowers governs lifecycle, gstack governs product/review/QA/release, and ECC supplies specialized capability guidance when relevant.

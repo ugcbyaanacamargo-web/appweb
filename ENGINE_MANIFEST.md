@@ -6,7 +6,8 @@ As contagens de estrelas abaixo foram lidas diretamente da API do GitHub nesta d
 
 | Papel | Repositório | Estrelas observadas | Licença reportada/observada | Commit fixado |
 |---|---|---:|---|---|
-| Motor de workflow | garrytan/gstack | 133,485 | MIT | `a6b3a57512ca6d5c6aa5b68f74f736195021f96e` |
+| Motor de workflow | garrytan/gstack | 133,589 | MIT | `a6b3a57512ca6d5c6aa5b68f74f736195021f96e` |
+| Agent harness / skills / research / security | affaan-m/ECC | 262,020 | MIT | `c752aac18616e26bf146f034a86947d8f6fc207e` |
 | Metodologia/skills | obra/superpowers | 288,183 | MIT | `b36e0829c6d0140e93cfef2ca599b1b07d4a7797` |
 | Biblioteca de Agent Skills | anthropics/skills | 176,917 | mista / sem licença única no nível do repo | `34040c9c568585f6929bedeaad110ad08f079624` |
 | Skills de engenharia | addyosmani/agent-skills | 95,933 | MIT | `a120596f6d7ff9b967a3f5e0331ea911376ee5ef` |
@@ -20,7 +21,7 @@ As contagens de estrelas abaixo foram lidas diretamente da API do GitHub nesta d
 ## Função de cada camada
 
 ### Engines
-`gstack` e `superpowers` organizam o processo de desenvolvimento: especificação, planejamento, implementação, testes, review, QA, segurança e entrega.
+`gstack` e `superpowers` organizam o processo de desenvolvimento: especificação, planejamento, implementação, testes, review, QA, segurança e entrega. `ECC` adiciona uma biblioteca ampla de skills/agents, pesquisa, padrões de backend/frontend/API, memória, verificação e segurança. Os três são fontes upstream independentes e não devem ser empilhados como hooks duplicados no mesmo runtime sem checagem de compatibilidade.
 
 ### Skills
 `anthropics/skills` fornece padrões amplos; `addyosmani/agent-skills` concentra práticas de engenharia; `vercel-labs/skills` fornece o mecanismo aberto para instalar/usar skills; `vercel-labs/agent-skills` adiciona regras específicas de React/Next.js, performance e interface web.
