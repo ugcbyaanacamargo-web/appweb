@@ -51,18 +51,15 @@ export async function sendDocumentExplicitly(input: {
     }
 
     const products = await getScopeProducts(db, context.scopeKey);
+    const localContext = await db.contexts.get(context.scopeKey);
     const localReady = repriceAndValidateLocal(
       document,
       products,
-      document.kind === 'quote'
-        ? true
-        : (await db.contexts.get(context.scopeKey))?.accountBlocked
-          ? false
-          : false
+      localContext?.allowSaleWithoutStock ?? false
     );
 
-    // For quotes the domain rule itself exempts stock limiting. For orders,
-    // the false flag enforces the last known local stock before server validation.
+    // Quotes are exempt from stock limiting by the domain rule itself.
+    // Orders honor the last synchronized company setting before server validation.
     await db.documents.put(localReady);
 
     const serverResult = await gateway.sendDocument(context, localReady);
