@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "entry": "docs/brain/INDEX.md",
+  "canonicalSpec": "docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt",
+  "state": "PROJECT_STATE.md",
+  "decisions": "DECISIONS.md",
+  "skillRouter": "docs/SKILL_ROUTER.md",
+  "routes": {
+    "new_feature": {"path": "docs/brain/routes/NEW_FEATURE.md", "requires": ["architecture", "testing_qa"], "related": ["frontend", "data_persistence", "auth_security", "offline_sync", "sales_documents", "api_integration"], "skills": ["superpowers", "gstack", "ecc"], "next": ["ci", "definition_of_done"]},
+    "bug_fix": {"path": "docs/brain/routes/BUG_FIX.md", "requires": ["testing_qa"], "related": ["architecture", "frontend", "data_persistence", "auth_security", "offline_sync", "sales_documents", "api_integration"], "skills": ["superpowers", "gstack", "ecc"], "next": ["ci", "definition_of_done"]},
+    "integration": {"path": "docs/brain/routes/INTEGRATION.md", "requires": ["api_integration", "auth_security", "testing_qa"], "related": ["architecture", "data_persistence", "offline_sync"], "skills": ["gstack", "ecc", "superpowers"], "next": ["ci", "definition_of_done"]},
+    "ui_change": {"path": "docs/brain/routes/UI_CHANGE.md", "requires": ["frontend", "testing_qa"], "related": ["sales_documents", "offline_sync", "auth_security"], "skills": ["superpowers", "gstack", "ecc"], "next": ["ci", "definition_of_done"]},
+    "security": {"path": "docs/brain/routes/SECURITY.md", "requires": ["auth_security", "testing_qa"], "related": ["architecture", "api_integration", "data_persistence"], "skills": ["gstack", "ecc", "superpowers"], "next": ["ci", "definition_of_done"]},
+    "release": {"path": "docs/brain/routes/RELEASE.md", "requires": ["deploy_release", "testing_qa"], "related": ["architecture", "auth_security"], "skills": ["gstack", "superpowers"], "next": ["ci", "definition_of_done"]}
+  },
+  "nodes": {
+    "architecture": {"path": "docs/brain/nodes/ARCHITECTURE.md"},
+    "frontend": {"path": "docs/brain/nodes/FRONTEND.md"},
+    "data_persistence": {"path": "docs/brain/nodes/DATA_PERSISTENCE.md"},
+    "auth_security": {"path": "docs/brain/nodes/AUTH_SECURITY.md"},
+    "offline_sync": {"path": "docs/brain/nodes/OFFLINE_SYNC.md"},
+    "sales_documents": {"path": "docs/brain/nodes/SALES_DOCUMENTS.md"},
+    "api_integration": {"path": "docs/brain/nodes/API_INTEGRATION.md"},
+    "testing_qa": {"path": "docs/brain/nodes/TESTING_QA.md"},
+    "deploy_release": {"path": "docs/brain/nodes/DEPLOY_RELEASE.md"}
+  },
+  "skills": {
+    "superpowers": {"path": "docs/brain/skills/SUPERPOWERS.md"},
+    "gstack": {"path": "docs/brain/skills/GSTACK.md"},
+    "ecc": {"path": "docs/brain/skills/ECC.md"}
+  },
+  "gates": {
+    "ci": {"path": "docs/brain/CI.md"},
+    "definition_of_done": {"path": "docs/brain/DEFINITION_OF_DONE.md"}
+  }
+}

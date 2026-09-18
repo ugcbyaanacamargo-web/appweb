@@ -1,75 +1,64 @@
 # appweb — Óris360° Vendas Mobile
 
-Repositório do **App de Vendas Mobile Óris360°**, uma PWA React/TypeScript offline-first, além do motor de desenvolvimento assistido já mantido neste repositório.
+Repositório do **App de Vendas Mobile Óris360°**, uma PWA React/TypeScript offline-first, e do motor de desenvolvimento assistido que governa este projeto.
 
-## Óris360° Vendas
+## Entrada para agentes
 
-A aplicação foi construída para continuar operando comercialmente sem internet depois do primeiro login online e da primeira sincronização válida da empresa naquele aparelho.
+Toda sessão de desenvolvimento deve começar por:
 
-### Funcionalidades implementadas
+`AGENTS.md` → `docs/brain/INDEX.md`
 
-- login e criação de conta em modo DEMO;
-- autenticação offline depois da primeira ativação válida;
+O cérebro do repositório direciona o agente para a especificação, estado, decisões, rota, nós e skills mínimos necessários.
+
+Especificação funcional canônica:
+- `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
+
+## Estado de integração
+
+A aplicação possui uma implementação funcional usando `DemoOrisGateway` para validação do comportamento local. A API/SSO reais do Óris360° ainda dependem de contratos oficiais externos e não são apresentados como integração concluída.
+
+A fronteira externa é:
+- `src/infrastructure/orisGateway.ts`
+
+O ponto de troca do gateway é:
+- `src/infrastructure/gatewayFactory.ts`
+
+Contrato pendente:
+- `docs/API_INTEGRATION.md`
+
+## Funcionalidades do App DEMO
+
+- autenticação inicial online e acesso offline posterior;
 - múltiplas empresas por usuário;
 - isolamento local por aparelho + usuário + empresa;
 - IndexedDB/Dexie;
-- Pedidos com exatamente as abas **TODOS** e **NÃO ENVIADOS**;
-- Orçamento → Pedido sem criar documento duplicado;
-- salvamento local separado de geração e transmissão;
-- transmissão somente por ação explícita;
-- idempotência;
-- bloqueio permanente no App após confirmação do servidor;
-- duplicação de documento enviado sempre como novo Orçamento;
-- clientes criados/editados offline;
-- prevenção de duplicidade por CPF/CNPJ;
-- produtos ativos, preço atual da base offline e regras de estoque;
-- sincronização comercial manual e transacional;
-- conta bloqueada preservando operação offline e envio explícito;
-- Tarefas/Missões com execução offline e retorno automático permitido;
-- localização operacional condicionada a conexão/permissão;
-- Relatórios e Comissões online-only;
-- Sistema Online online-only;
-- Ajuda com contatos vindos de configuração central;
-- IA no WhatsApp preparada para integração;
+- Pedidos com **TODOS** e **NÃO ENVIADOS**;
+- Orçamento → Pedido sem documento duplicado;
+- salvar, gerar Pedido e enviar como ações separadas;
+- transmissão explícita com idempotência;
+- bloqueio pós-envio;
+- duplicação como novo Orçamento;
+- clientes offline e prevenção de duplicidade por CPF/CNPJ;
+- produtos/preço/estoque pela base local;
+- sincronização comercial manual/transacional;
+- Missões offline com retorno automático permitido;
+- gates online para Relatórios e Sistema Online;
 - PWA/service worker;
-- configuração pronta para Netlify.
+- configuração Netlify.
 
-### Modo DEMO
-
-Enquanto a API real Óris360° não estiver conectada, o App utiliza `DemoOrisGateway`, persistido no navegador.
-
-Credenciais DEMO:
+## Credenciais DEMO
 
 ```text
 vendedor@demo.oris360.local
 demo1234
 ```
 
-O modo DEMO possui duas empresas para testar isolamento de contexto e regras diferentes de estoque.
-
-## API real
-
-A interface externa é `src/infrastructure/orisGateway.ts`.
-
-O ponto único para trocar o backend DEMO pela API real é:
-
-```text
-src/infrastructure/gatewayFactory.ts
-```
-
-O contrato completo da integração está em:
-
-- `docs/API_INTEGRATION.md`
-
-Nenhum endpoint, token, telefone ou e-mail oficial foi inventado.
+O modo DEMO possui duas empresas para exercitar isolamento e regras distintas.
 
 ## Aceite
 
-A rastreabilidade dos 24 critérios funcionais está em:
-
+A rastreabilidade dos 24 critérios está em:
 - `docs/ACCEPTANCE_MATRIX.md`
-
-Os testes cobrem domínio, isolamento, sincronização, transmissão, idempotência, cliente offline, missões, bloqueio, estoque e histórico local.
 
 ## Desenvolvimento
 
@@ -78,29 +67,23 @@ npm install
 npm run dev
 ```
 
-Testes:
+## Verificação
 
 ```bash
+npm run lint
 npm run test:run
-```
-
-Build de produção:
-
-```bash
 npm run build
+npx playwright install chromium
+npm run test:e2e
+python scripts/validate_engine.py
 ```
 
-Saída:
-
-```text
-dist/
-```
+No GitHub, os workflows obrigatórios são:
+- `app-ci`
+- `e2e`
+- `Engine integrity`
 
 ## Publicação no Netlify
-
-O repositório já contém `netlify.toml`.
-
-Configuração esperada:
 
 ```text
 Build command: npm run build
@@ -108,14 +91,7 @@ Publish directory: dist
 Node: 22
 ```
 
-Ao importar este repositório no Netlify, a configuração é lida automaticamente.
-
-O App inclui:
-- fallback SPA;
-- service worker;
-- manifest PWA;
-- headers de segurança;
-- política de cache específica para o service worker.
+O repositório contém `netlify.toml`, fallback SPA, manifest/service worker e headers de segurança. A existência dessa configuração não prova que uma URL de produção já foi criada ou validada.
 
 ## Arquitetura
 
@@ -125,29 +101,26 @@ O App inclui:
 - Dexie / IndexedDB
 - vite-plugin-pwa
 - Vitest
+- ESLint
+- Playwright
 - GitHub Actions
 - Netlify-ready
 
-## Motor do repositório
+## Motores e skills
 
-O projeto também mantém os motores/skills upstream em `vendor/` e o contrato de trabalho em:
-
-- `AGENTS.md`
+Fontes upstream fixadas ficam em `vendor/`. O agente deve navegar por:
+- `docs/brain/INDEX.md`
 - `docs/SKILL_ROUTER.md`
 - `docs/RUNTIME.md`
 - `ENGINE_MANIFEST.md`
 
-Para validar o motor:
-
-```bash
-python scripts/validate_engine.py
-```
+GitHub armazena as instruções, mas somente capacidades expostas pelo runtime atual podem executar ações nativamente.
 
 ## Segurança
 
-- credencial offline persistente protegida por PBKDF2 + AES-GCM;
+- credencial offline protegida por PBKDF2 + AES-GCM;
 - sessão ativa em `sessionStorage`;
-- CSP e headers de segurança no Netlify;
+- CSP e headers no Netlify;
 - auditoria de dependências runtime no CI;
 - submódulos fixados por SHA;
-- nenhum segredo deve ser commitado no repositório.
+- nenhum segredo deve ser commitado.

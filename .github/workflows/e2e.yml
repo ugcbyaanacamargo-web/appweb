@@ -1,4 +1,4 @@
-name: app-ci
+name: e2e
 
 on:
   push:
@@ -11,8 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  test-build:
+  playwright:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -24,16 +25,7 @@ jobs:
           node-version: '22'
       - name: Install
         run: npm install --no-audit --no-fund
-      - name: Audit runtime dependencies
-        run: npm audit --omit=dev --audit-level=high
-      - name: Lint
-        run: npm run lint
-      - name: Test
-        run: npm run test:run
-      - name: Build
-        run: npm run build
-      - name: Verify PWA and Netlify artifacts
-        run: |
-          test -s dist/manifest.webmanifest
-          test -s dist/sw.js
-          grep -q 'publish = "dist"' netlify.toml
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser E2E
+        run: npm run test:e2e

@@ -1,0 +1,1395 @@
+PROMPT MESTRE — APP DE VENDAS MOBILE ÓRIS360°
+
+Crie/implemente  o APP DE VENDAS MOBILE ÓRIS360°, integrado ao ecossistema Óris360°.
+
+IMPORTANTE:
+Este prompt representa uma especificação funcional fechada. As regras de negócio descritas como obrigatórias ou imutáveis não devem ser simplificadas, reinterpretadas ou substituídas por comportamentos automáticos que contrariem o fluxo definido.
+
+O objetivo principal do aplicativo é permitir que o vendedor continue realizando sua operação comercial mesmo sem internet, depois de uma primeira autenticação e sincronização válidas.
+
+==================================================
+1. PRINCÍPIO CENTRAL
+==================================================
+
+O App de Vendas Óris360° deve ser OFFLINE-FIRST.
+
+Regra principal:
+
+“O vendedor precisa conseguir continuar vendendo mesmo sem internet.”
+
+Depois da primeira sincronização válida, o App deve possuir localmente todos os dados necessários para a operação comercial offline.
+
+Não desenvolver o App como uma simples página web que deixa de funcionar sem internet.
+
+A estrutura funcional do App é um PADRÃO GLOBAL FIXO do Óris360°.
+
+Todas as empresas utilizam as mesmas páginas e funcionalidades do App.
+
+As empresas NÃO podem:
+- adicionar páginas próprias ao App;
+- retirar páginas;
+- escolher quais páginas determinado vendedor verá;
+- alterar a estrutura principal do aplicativo.
+
+O que muda entre empresas são os dados, usuários, produtos, clientes, configurações e contexto autenticado.
+
+Sempre que uma funcionalidade já existir adequadamente no ecossistema Óris360°, REUTILIZAR/INTEGRAR em vez de reconstruir desnecessariamente.
+
+==================================================
+2. MENU PRINCIPAL
+==================================================
+
+Criar o menu nesta estrutura:
+
+1. Pedidos
+2. Clientes
+3. Produtos
+4. Tarefas / Missões
+5. IA no WhatsApp
+6. Relatórios e Comissões
+7. Sistema Online
+8. Ajuda
+9. Sincronizar
+10. Sair da minha conta
+
+No topo do menu apresentar:
+- usuário autenticado;
+- empresa atualmente ativa.
+
+Na área de sincronização apresentar:
+- data e hora da última sincronização CONCLUÍDA COM SUCESSO.
+
+NÃO criar nesta primeira versão:
+- Novidades;
+- Preferências do aplicativo;
+- Excluir esta conta.
+
+Após o login/inicialização, a tela principal deve ser PEDIDOS.
+
+O menu lateral pode iniciar aberto sobre a tela de Pedidos. Ao tocar fora dele, deve fechar.
+
+==================================================
+3. LOGIN
+==================================================
+
+Tela inicial com identidade visual Óris360° e duas ações principais:
+
+CRIAR UMA CONTA
+JÁ TENHO CONTA
+
+Login:
+- e-mail;
+- senha;
+- visualizar/ocultar senha;
+- ENTRAR;
+- VOLTAR;
+- Esqueci a senha;
+- aviso de privacidade quando aplicável.
+
+O PRIMEIRO LOGIN naquele aparelho exige internet.
+
+Fluxo:
+
+LOGIN ONLINE
+→ autenticar usuário
+→ identificar conta/empresa
+→ selecionar empresa quando aplicável
+→ realizar primeira sincronização
+→ criar base local válida
+→ liberar operação offline.
+
+Depois disso, o vendedor pode trabalhar offline.
+
+==================================================
+4. CRIAR UMA CONTA
+==================================================
+
+“Criar uma conta” NÃO significa cadastrar um vendedor dentro de uma empresa existente.
+
+Essa função cria uma NOVA CONTA ÓRIS360°.
+
+O cadastro deve ser enviado à plataforma Óris360°, criando o ambiente/loja correspondente.
+
+As mesmas credenciais devem permitir posteriormente acesso ao Sistema Online.
+
+A pessoa poderá acessar o Sistema Online, configurar sua operação/produtos e utilizar posteriormente o App de Vendas.
+
+Prever:
+
+TESTE GRÁTIS POR 7 DIAS
+SEM COBRANÇA AUTOMÁTICA.
+
+Não é necessário aprofundar neste momento o processo comercial/lead nem inventar campos adicionais que não tenham sido especificados.
+
+==================================================
+5. USUÁRIO COM MAIS DE UMA EMPRESA
+==================================================
+
+O mesmo usuário pode estar vinculado a mais de uma empresa.
+
+Permitir trocar a EMPRESA ATIVA.
+
+Cada combinação usuário/empresa deve possuir contexto de dados corretamente isolado.
+
+Separar completamente:
+- clientes;
+- produtos;
+- preços;
+- estoque;
+- configurações;
+- documentos locais;
+- sincronizações;
+- demais informações operacionais.
+
+NUNCA misturar dados de empresas diferentes.
+
+Ao entrar pela primeira vez em determinada empresa naquele aparelho, exigir internet para realizar a primeira sincronização dessa empresa.
+
+==================================================
+6. BANCO LOCAL E ISOLAMENTO
+==================================================
+
+Após a primeira sincronização válida, armazenar localmente o necessário para vender offline, incluindo:
+
+- clientes;
+- produtos ativos;
+- preços;
+- estoque conhecido;
+- catálogo;
+- configurações comerciais necessárias;
+- regras de estoque;
+- demais dados indispensáveis à operação.
+
+Usuários diferentes utilizando o mesmo aparelho devem possuir espaços locais isolados.
+
+Usuário B não pode enxergar:
+- documentos locais do usuário A;
+- clientes pendentes do usuário A;
+- pendências locais pertencentes ao usuário A.
+
+Ao usuário A entrar novamente, seus dados locais continuam disponíveis.
+
+SAIR DA MINHA CONTA:
+- encerra a sessão;
+- NÃO apaga o banco local.
+
+==================================================
+7. HISTÓRICO DE PEDIDOS E ORÇAMENTOS
+==================================================
+
+REGRA OBRIGATÓRIA:
+
+Pedidos e Orçamentos históricos existentes no Sistema Online NUNCA devem ser baixados para o App.
+
+O histórico apresentado no aparelho corresponde aos documentos originados naquele ambiente local.
+
+Mesmo login em dois aparelhos:
+
+APARELHO A:
+documentos locais A.
+
+APARELHO B:
+documentos locais B.
+
+Um documento criado no A NÃO deve aparecer automaticamente no B.
+
+Quando documentos são enviados, ficam centralizados no Sistema Online, mas NÃO retornam para outros aparelhos como histórico local.
+
+Em aparelho novo ou após reinstalação:
+
+- começar com ZERO histórico local de Pedidos/Orçamentos;
+- baixar clientes, produtos e demais dados comerciais necessários;
+- NÃO baixar Pedidos/Orçamentos históricos.
+
+Pedidos já enviados continuam preservados no Sistema Online.
+
+Pedidos/Orçamentos ainda não enviados e existentes exclusivamente em aparelho perdido não podem ser recuperados do servidor.
+
+==================================================
+8. TELA PEDIDOS
+==================================================
+
+Tela principal do aplicativo.
+
+Criar EXATAMENTE duas abas:
+
+TODOS
+NÃO ENVIADOS
+
+NÃO criar uma terceira aba chamada “Enviados”.
+
+A aba NÃO ENVIADOS deve possuir contador.
+
+A listagem poderá exibir estados pertinentes existentes no sistema, incluindo:
+- Em orçamento;
+- Concluído;
+- Faturado;
+- Parcialmente faturado.
+
+Organizar os documentos de forma clara, podendo agrupá-los por data.
+
+Criar botão flutuante “+” para iniciar nova operação.
+
+==================================================
+9. NOVO ORÇAMENTO
+==================================================
+
+Toda nova operação começa como ORÇAMENTO.
+
+Fluxo:
+
+PEDIDOS
+→ botão +
+→ NOVO ORÇAMENTO
+→ selecionar cliente
+→ adicionar produtos
+→ catálogo
+→ retornar ao orçamento.
+
+O CLIENTE deve ser selecionado antes da inclusão dos produtos.
+
+Enquanto nenhum cliente estiver selecionado:
+
+ADICIONAR PRODUTOS = DESABILITADO.
+
+Depois da seleção:
+
+ADICIONAR PRODUTOS = HABILITADO.
+
+Quando habilitado, utilizar botão largo, retangular, escuro/preto, texto branco centralizado em caixa alta, coerente com o padrão visual aprovado.
+
+==================================================
+10. CATÁLOGO / LOJA VIRTUAL
+==================================================
+
+NÃO recriar desnecessariamente a Loja Virtual/Catálogo.
+
+Já existe funcionalidade de catálogo no módulo Delivery.
+
+Reutilizar/integrar essa funcionalidade.
+
+Fluxo:
+
+Orçamento com cliente selecionado
+→ ADICIONAR PRODUTOS
+→ abrir Loja Virtual/Catálogo existente
+→ vendedor seleciona produtos/quantidades
+→ carrinho
+→ retornar produtos e valores ao Orçamento.
+
+O cliente deve permanecer vinculado durante todo o processo.
+
+O catálogo precisa funcionar offline utilizando a base local sincronizada.
+
+==================================================
+11. SALVAR, GERAR PEDIDO E ENVIAR
+==================================================
+
+Estas três ações são DIFERENTES e não podem ser confundidas.
+
+SALVAR:
+salva o documento localmente.
+
+GERAR PEDIDO:
+transforma definitivamente o Orçamento em Pedido.
+
+ENVIAR PARA O SISTEMA ONLINE:
+transmite explicitamente o documento ao servidor.
+
+Portanto:
+
+SALVAR ≠ GERAR PEDIDO ≠ ENVIAR.
+
+Nada deve ser transmitido simplesmente porque foi salvo.
+
+Nada deve ser transmitido simplesmente porque virou Pedido.
+
+Nada deve ser transmitido porque ocorreu uma sincronização geral.
+
+==================================================
+12. CONVERSÃO ORÇAMENTO → PEDIDO
+==================================================
+
+Ao selecionar GERAR PEDIDO:
+
+o próprio documento deixa de ser Orçamento e passa a ser Pedido.
+
+NÃO criar dois documentos independentes.
+
+A conversão é DEFINITIVA.
+
+PEDIDO NÃO VOLTA A SER ORÇAMENTO.
+
+Se ainda não foi enviado:
+- pode ser editado;
+- pode ser excluído localmente.
+
+==================================================
+13. BOTÕES AO FINAL DO ORÇAMENTO
+==================================================
+
+Manter a seguinte ordem vertical:
+
+1. Gerar pedido
+2. Enviar para o sistema online
+3. Enviar por e-mail
+4. Compartilhar orçamento
+
+Utilizar apresentação limpa, com botões largos e coerentes com o padrão visual do App.
+
+==================================================
+14. ENVIAR PARA O SISTEMA ONLINE
+==================================================
+
+O comando transmite o documento exatamente no tipo em que ele se encontra.
+
+Se for Orçamento:
+→ servidor recebe ORÇAMENTO.
+
+Se já tiver sido convertido:
+→ servidor recebe PEDIDO.
+
+O envio exige conexão com internet naquele momento.
+
+Se estiver offline:
+- informar ausência de conexão;
+- NÃO enviar;
+- manter documento salvo;
+- manter em NÃO ENVIADOS;
+- vendedor deverá tentar novamente posteriormente.
+
+NÃO criar envio automático de Pedidos/Orçamentos quando a internet retornar.
+
+A transmissão desses documentos é SEMPRE consequência de uma ação explícita do vendedor.
+
+==================================================
+15. FALHA DE TRANSMISSÃO
+==================================================
+
+Documento somente pode ser marcado como enviado após CONFIRMAÇÃO DO SERVIDOR.
+
+Em caso de:
+- queda da internet;
+- timeout;
+- erro do servidor;
+- interrupção;
+- falha de resposta;
+
+não marcar como enviado.
+
+Manter em NÃO ENVIADOS.
+
+Permitir tentativa manual novamente.
+
+==================================================
+16. IDEMPOTÊNCIA / PROTEÇÃO CONTRA DUPLICIDADE
+==================================================
+
+Toda transmissão de Pedido/Orçamento deve possuir identificador/chave única de idempotência.
+
+Exemplo:
+
+servidor recebe Pedido;
+resposta não chega ao aparelho;
+vendedor toca novamente em Enviar.
+
+Resultado correto:
+
+NÃO criar segundo Pedido.
+
+O servidor deve reconhecer a mesma transmissão e devolver o número/registro oficial já criado.
+
+==================================================
+17. IDENTIFICADOR LOCAL E NÚMERO OFICIAL
+==================================================
+
+Todo documento criado offline recebe identificador local único/provisório.
+
+Esse identificador precisa evitar colisões mesmo com:
+- vários vendedores;
+- vários aparelhos;
+- operação simultânea offline.
+
+Após envio e aceite do servidor:
+
+- Sistema Online gera número oficial;
+- App recebe o número;
+- documento local passa a exibi-lo.
+
+==================================================
+18. DOCUMENTO ENVIADO = BLOQUEADO
+==================================================
+
+Depois da confirmação do envio:
+
+Orçamento OU Pedido fica permanentemente bloqueado para edição pelo App.
+
+Permitir consulta.
+
+Exibir indicação semelhante a:
+
+“Documento bloqueado porque já está no Sistema Online.”
+
+Disponibilizar:
+
+VER NO SISTEMA ONLINE.
+
+Depois de enviado:
+- não editar pelo App;
+- não excluir pelo App.
+
+==================================================
+19. EXCLUSÃO LOCAL
+==================================================
+
+Documento ainda NÃO enviado:
+- pode ser excluído localmente;
+- solicitar confirmação.
+
+Documento já enviado:
+- não permitir exclusão pelo App.
+
+==================================================
+20. DUPLICAR PEDIDO
+==================================================
+
+O botão DUPLICAR PEDIDO só deve existir DEPOIS do envio bem-sucedido do documento.
+
+Nome do botão:
+
+DUPLICAR PEDIDO.
+
+Usar esse mesmo nome inclusive quando o documento original tiver sido enviado como Orçamento.
+
+NÃO criar “Duplicar orçamento”.
+
+Toda duplicação cria SEMPRE:
+
+NOVO ORÇAMENTO LOCAL.
+
+Nunca cria diretamente um novo Pedido.
+
+O original permanece bloqueado e inalterado.
+
+Novo documento:
+- novo ID;
+- data atual;
+- vendedor atualmente autenticado.
+
+==================================================
+21. O QUE A DUPLICAÇÃO COPIA
+==================================================
+
+Copiar SOMENTE:
+
+1. cliente original, caso ainda esteja ativo/existente;
+2. produtos válidos;
+3. quantidades válidas, recalculadas conforme base offline atual.
+
+NÃO copiar:
+- forma de pagamento;
+- condição de pagamento;
+- descontos;
+- acréscimos;
+- frete;
+- transportadora;
+- observações;
+- informações adicionais;
+- outros campos complementares.
+
+Esses campos começam vazios.
+
+O vendedor pode trocar o cliente depois da duplicação.
+
+Se o cliente original estiver inativo/excluído:
+- novo Orçamento inicia sem cliente.
+
+Se produto estiver inativo:
+- não copiar o produto.
+
+==================================================
+22. REGRA IMUTÁVEL DE PREÇO
+==================================================
+
+SEMPRE utilizar o preço da BASE OFFLINE MAIS ATUAL DISPONÍVEL NO APARELHO quando houver recálculo ou divergência.
+
+Exemplo:
+
+Orçamento local antigo:
+R$ 10,00.
+
+Depois ocorre sincronização:
+preço atual = R$ 12,00.
+
+Ao reabrir/trabalhar/recalcular o documento:
+usar R$ 12,00.
+
+Aplicar também em:
+- duplicação;
+- Orçamento não enviado;
+- Pedido não enviado;
+- qualquer recálculo pertinente.
+
+Não há preço diferente por cliente nesta regra.
+
+==================================================
+23. PRODUTOS
+==================================================
+
+O App trabalha com PRODUTOS ATIVOS.
+
+Produto inativo:
+- não disponível para nova venda.
+
+Se um produto existente localmente for posteriormente inativado no Sistema Online:
+- próxima sincronização atualiza o estado;
+- impedir nova utilização;
+- se estiver em documento ainda não enviado, retirar o item e recalcular os totais.
+
+Preservar referências históricas tecnicamente quando necessário.
+
+No App o vendedor pode:
+- consultar;
+- pesquisar;
+- visualizar informações;
+- visualizar preço/estoque conhecido;
+- usar o produto na venda.
+
+No App o vendedor NÃO pode:
+- cadastrar produto;
+- editar produto;
+- inativar produto;
+- alterar preço;
+- administrar estoque.
+
+Essas ações pertencem ao Sistema Online.
+
+==================================================
+24. REGRA IMUTÁVEL DE ESTOQUE
+==================================================
+
+O estoque offline corresponde ao valor da ÚLTIMA SINCRONIZAÇÃO VÁLIDA.
+
+É aceitável que o estoque local fique desatualizado durante operação offline.
+
+A empresa possui configuração:
+
+PERMITIR VENDA SEM ESTOQUE = SIM/NÃO.
+
+SE SIM:
+
+produto ativo pode ser vendido mesmo:
+- com estoque insuficiente;
+- com estoque zero;
+- mesmo que isso resulte em situação negativa no servidor conforme regra empresarial.
+
+Exemplo:
+solicita 10;
+estoque 6;
+resultado = mantém 10.
+
+SE NÃO:
+
+limitar quantidade à disponibilidade real aceita.
+
+Exemplo:
+solicita 10;
+estoque disponível 6;
+resultado final = 6.
+
+O documento passa simplesmente a possuir 6 unidades.
+
+NÃO exibir:
+“solicitado 10 / atendido 6”.
+
+Recalcular os totais.
+
+Se estoque = 0:
+- remover o item.
+
+Outros itens válidos do Pedido continuam.
+
+NÃO rejeitar o Pedido inteiro porque um item não possui quantidade suficiente.
+
+==================================================
+25. VALIDAÇÃO NO SERVIDOR
+==================================================
+
+Quando a empresa NÃO permitir venda sem estoque, o servidor deve validar a disponibilidade atual no momento em que o Pedido for transmitido.
+
+Se o App possui estoque antigo de 10, mas o servidor possui somente 6:
+
+Pedido final aceito = 6.
+
+O App deve receber a quantidade final aceita e atualizar o documento para 6, recalculando os valores.
+
+==================================================
+26. ORÇAMENTO NÃO MOVIMENTA ESTOQUE
+==================================================
+
+Orçamento:
+- não baixa estoque;
+- não reserva estoque;
+- não compromete estoque;
+- não precisa ser reduzido no momento do envio.
+
+Pode ser enviado integralmente mesmo que a quantidade seja superior ao estoque.
+
+Se posteriormente o Orçamento for transformado em Pedido no Sistema Online, aplicar naquele momento a regra de estoque.
+
+Exemplo:
+
+Orçamento = 10.
+Estoque atual = 6.
+Venda sem estoque = NÃO.
+
+Pedido resultante = 6.
+
+Se venda sem estoque = SIM:
+pode permanecer 10.
+
+==================================================
+27. CLIENTES
+==================================================
+
+Reutilizar/integrar a tela de Clientes já existente no ecossistema Óris360°.
+
+Ela deve servir:
+- pelo menu Clientes;
+- como seletor durante criação de Orçamento.
+
+Ao selecionar um cliente durante o Orçamento:
+→ retornar automaticamente ao documento.
+
+O vendedor pode pelo App:
+- consultar cliente;
+- cadastrar cliente;
+- editar TODOS os dados permitidos do cliente.
+
+Pode fazer isso offline.
+
+O vendedor NÃO pode pelo App:
+- excluir cliente;
+- inativar cliente.
+
+Excluir/inativar pertence ao Sistema Online.
+
+==================================================
+28. CLIENTE NOVO OFFLINE
+==================================================
+
+Permitir cadastrar cliente completamente offline.
+
+Salvar localmente.
+
+Permitir utilizá-lo imediatamente em uma venda offline.
+
+Se o cliente estiver ligado a Pedido/Orçamento e o vendedor posteriormente tocar:
+
+ENVIAR PARA O SISTEMA ONLINE
+
+executar automaticamente:
+
+1. criar/vincular cliente no servidor;
+2. receber ID oficial;
+3. vincular registro local;
+4. transmitir documento com o cliente correto.
+
+Tudo deve ocorrer como uma única ação para o vendedor.
+
+NÃO exigir sincronização geral antes.
+
+==================================================
+29. CLIENTE EDITADO OFFLINE
+==================================================
+
+Permitir editar cliente existente offline.
+
+Se esse cliente estiver associado a documento que será enviado:
+
+1. transmitir primeiro as alterações daquele cliente;
+2. confirmar/vincular;
+3. transmitir o documento.
+
+Não exigir sincronização geral antes.
+
+==================================================
+30. CLIENTE NOVO SEM DOCUMENTO
+==================================================
+
+Se houver cliente criado/editado localmente sem documento associado, ele será transmitido quando o vendedor executar a SINCRONIZAÇÃO GERAL.
+
+==================================================
+31. PREVENÇÃO DE CLIENTE DUPLICADO
+==================================================
+
+Utilizar CPF/CNPJ como identificador para prevenção de duplicidade DENTRO DA MESMA EMPRESA.
+
+Exemplo:
+
+vendedor offline cadastra CNPJ X;
+CNPJ X já existe no servidor.
+
+Quando houver transmissão/sincronização:
+
+NÃO criar outro cliente.
+
+Vincular o registro local ao cliente oficial já existente.
+
+==================================================
+32. CONFLITOS DE EDIÇÃO DE CLIENTE
+==================================================
+
+Se o mesmo campo do mesmo cliente tiver sido alterado:
+- offline;
+- e no Sistema Online;
+
+prevalece a ALTERAÇÃO MAIS RECENTE segundo timestamp controlado pelo sistema.
+
+Não criar tela manual de resolução de conflito nesta versão.
+
+==================================================
+33. CLIENTE INATIVO
+==================================================
+
+Cliente inativo/excluído segundo a base atual não pode ser utilizado em nova operação.
+
+Se um documento enviado for duplicado e o cliente original já estiver inativo:
+- criar novo Orçamento sem cliente;
+- exigir seleção/cadastro de outro.
+
+==================================================
+34. SINCRONIZAÇÃO GERAL
+==================================================
+
+A sincronização da BASE COMERCIAL é MANUAL.
+
+O vendedor deve tocar:
+
+SINCRONIZAR.
+
+Não sincronizar automaticamente só porque a internet voltou.
+
+Não criar opções separadas como:
+- sincronizar produtos;
+- sincronizar clientes;
+- sincronizar estoque.
+
+Um único comando sincroniza a base necessária.
+
+==================================================
+35. ORDEM DA SINCRONIZAÇÃO
+==================================================
+
+Ao tocar SINCRONIZAR:
+
+ETAPA 1:
+enviar novos clientes e alterações de clientes pendentes.
+
+ETAPA 2:
+baixar/atualizar a base comercial completa necessária.
+
+Incluindo:
+- clientes;
+- produtos ativos;
+- preços;
+- estoque;
+- configurações;
+- regra de venda sem estoque;
+- demais dados necessários ao offline.
+
+REGRA ABSOLUTA:
+
+SINCRONIZAR NUNCA ENVIA PEDIDOS OU ORÇAMENTOS.
+
+==================================================
+36. SINCRONIZAÇÃO SEGURA / TRANSACIONAL
+==================================================
+
+Nunca substituir a última base válida por uma base incompleta.
+
+Exemplo:
+
+inicia download;
+internet cai no meio.
+
+Resultado:
+
+manter a base anterior completamente funcional.
+
+Não corromper nem substituir parcialmente os dados válidos.
+
+Somente depois da nova sincronização estar concluída e validada:
+- ativar a nova base;
+- atualizar data/hora da última sincronização.
+
+Tentativa fracassada NÃO altera data/hora da última sincronização bem-sucedida.
+
+==================================================
+37. ERRO ISOLADO EM CLIENTE
+==================================================
+
+Exemplo:
+
+5 clientes pendentes.
+
+4 são válidos.
+1 possui erro.
+
+Processar os 4 válidos.
+
+Manter o inválido localmente como pendente.
+
+Não impedir desnecessariamente o restante da sincronização.
+
+Se a base geral tiver sido atualizada corretamente, a mensagem geral pode ser:
+
+“SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO.”
+
+Não transformar toda a sincronização em erro apenas por causa de uma pendência isolada de cliente.
+
+==================================================
+38. CAMPOS COMPLEMENTARES
+==================================================
+
+Campos como:
+- forma de pagamento;
+- condição de pagamento;
+- frete;
+- transportadora;
+- desconto;
+- acréscimo;
+- observações;
+- informações adicionais;
+
+são complementares/opcionais nesta especificação.
+
+Não obrigar preenchimento.
+
+Quando preenchidos:
+- armazenar localmente;
+- transmitir junto com o documento.
+
+==================================================
+39. CONTA BLOQUEADA / INADIMPLENTE / TESTE EXPIRADO
+==================================================
+
+Se o aparelho já possui uma base válida antes do bloqueio:
+
+PERMITIR CONTINUAR TRABALHANDO OFFLINE.
+
+Não criar expiração periódica que inutilize a base local e impeça o vendedor de trabalhar.
+
+A conta bloqueada NÃO pode realizar NOVA SINCRONIZAÇÃO COMERCIAL.
+
+Portanto, continuará usando:
+- últimos clientes;
+- últimos produtos;
+- últimos preços;
+- último estoque;
+- últimas configurações válidas.
+
+Ao tentar sincronizar conta bloqueada:
+- informar que a conta está bloqueada;
+- não substituir a base válida;
+- oferecer opção de tentar novamente/cancelar e orientação para regularização conforme dados oficiais do Óris360°.
+
+IMPORTANTE:
+
+CONTA BLOQUEADA AINDA PODE ENVIAR PEDIDOS E ORÇAMENTOS AO SISTEMA ONLINE.
+
+Bloqueio de sincronização comercial e transmissão de documentos são coisas diferentes.
+
+==================================================
+40. TAREFAS / MISSÕES
+==================================================
+
+Tarefas/Missões devem funcionar dentro do MESMO App de Vendas.
+
+Não exigir um segundo aplicativo.
+
+Integrar ao módulo de Tarefas/Missões existente no ecossistema Óris360°.
+
+O vendedor vê somente Tarefas/Missões destinadas a ele.
+
+Não reinventar desnecessariamente toda a estrutura de Missões se ela já existir no sistema.
+
+==================================================
+41. NOTIFICAÇÃO AUTOMÁTICA DE TAREFAS
+==================================================
+
+Tarefas/Missões são uma EXCEÇÃO à sincronização comercial manual.
+
+Quando uma nova Tarefa/Missão for atribuída e houver internet:
+
+- entregar automaticamente ao aparelho;
+- gerar push/notificação;
+- gerar alerta sonoro conforme permissões do dispositivo.
+
+Não exigir que o vendedor toque SINCRONIZAR para receber uma nova Tarefa/Missão.
+
+Depois de recebida:
+- manter disponível offline.
+
+Nesta primeira versão, concentrar notificações automáticas em Tarefas/Missões.
+
+Não transformar produtos, preços, estoque, clientes e Pedidos em canais de atualização automática.
+
+==================================================
+42. EXECUÇÃO OFFLINE DE MISSÕES
+==================================================
+
+Tarefa/Missão já recebida pode ser executada offline.
+
+Conforme a configuração/tipo da missão, permitir armazenar localmente:
+- conclusão;
+- observações;
+- ocorrências;
+- fotos;
+- localização;
+- evidências;
+- demais dados previstos pelo módulo.
+
+DIFERENÇA IMPORTANTE:
+
+Pedidos/Orçamentos = envio manual.
+
+Retorno de execução de Tarefas/Missões = pode ser enviado automaticamente quando a conexão retornar.
+
+==================================================
+43. LOCALIZAÇÃO OPERACIONAL / MAPA DA EQUIPE
+==================================================
+
+Enquanto o vendedor estiver:
+- autenticado;
+- conectado à internet;
+- com permissões de localização necessárias concedidas;
+
+o App poderá transmitir localização operacional para o Óris360°.
+
+Essa informação alimentará o MAPA DA EQUIPE.
+
+O acompanhamento operacional não depende de o vendedor estar executando uma Missão naquele momento.
+
+Respeitar:
+- permissões Android/iOS;
+- políticas do sistema operacional;
+- limitações de segundo plano.
+
+Se não houver internet:
+- não existe rastreamento em tempo real no servidor.
+
+Localização exigida como evidência de uma Missão pode ser armazenada localmente e transmitida depois.
+
+==================================================
+44. RELATÓRIOS E COMISSÕES
+==================================================
+
+Esta área é ONLINE.
+
+Não armazenar toda essa área para funcionamento offline.
+
+O vendedor deve visualizar SOMENTE dados vinculados ao próprio perfil, incluindo conforme disponibilidade do sistema:
+- próprias vendas;
+- resultados;
+- comissões.
+
+A porcentagem de comissão existente no cadastro do vendedor pode alimentar os cálculos.
+
+Criar/garantir também no SISTEMA ONLINE uma página específica:
+
+RELATÓRIOS E COMISSÕES DO VENDEDOR.
+
+O vendedor poderá acessá-la:
+- pelo App;
+- diretamente pelo site com as mesmas credenciais.
+
+Sem internet:
+informar que conexão é necessária.
+
+==================================================
+45. SISTEMA ONLINE
+==================================================
+
+O botão SISTEMA ONLINE abre a plataforma Óris360°.
+
+Usar:
+- usuário autenticado;
+- empresa/contexto ativo;
+- mesma conta.
+
+Implementar experiência de LOGIN INTEGRADO.
+
+Se a sessão do App for válida, evitar exigir novamente e-mail e senha.
+
+Depois de entrar no Sistema Online:
+- aplicar as permissões normais da plataforma web daquele usuário.
+
+Não confundir a estrutura fixa do App com as permissões da plataforma web.
+
+Um titular/administrador pode possuir acesso administrativo no Sistema Online conforme suas permissões.
+
+Um vendedor terá os acessos que sua conta web possuir.
+
+==================================================
+46. IA NO WHATSAPP
+==================================================
+
+Incluir no menu:
+
+IA NO WHATSAPP.
+
+Tratar como integração prevista do Óris360° com inteligência artificial através do WhatsApp.
+
+Nesta etapa, NÃO é necessário detalhar excessivamente:
+- arquitetura dos agentes;
+- ativação;
+- autenticação;
+- engenharia da IA;
+- fluxos avançados.
+
+Deixar a implementação detalhada para a equipe técnica/IA.
+
+Não copiar marca, textos ou identidade de aplicativos usados apenas como referência.
+
+==================================================
+47. AJUDA
+==================================================
+
+Criar página AJUDA com:
+- WhatsApp/telefone oficial Óris360°;
+- e-mail oficial Óris360°.
+
+Esses contatos devem ser CONFIGURÁVEIS CENTRALMENTE.
+
+Alterar telefone/e-mail não deve exigir nova publicação do App.
+
+Não inventar números ou e-mails ainda não fornecidos.
+
+==================================================
+48. REAPROVEITAR FUNCIONALIDADES EXISTENTES
+==================================================
+
+Não reconstruir o que já estiver pronto e adequado no ecossistema Óris360°.
+
+Priorizar integração/reutilização de:
+- Pedidos;
+- Clientes;
+- cadastro de clientes;
+- Orçamento;
+- Loja Virtual/Catálogo do Delivery;
+- Tarefas/Missões;
+- demais componentes existentes compatíveis.
+
+O foco do desenvolvimento novo deve estar principalmente em:
+- experiência mobile;
+- banco local;
+- offline-first;
+- sincronização;
+- isolamento de dados;
+- transmissão segura;
+- integração entre App e Sistema Online.
+
+==================================================
+49. MATRIZ DE FUNCIONAMENTO ONLINE/OFFLINE
+==================================================
+
+CRIAR/EDITAR CLIENTE:
+Offline = SIM.
+Online = SIM.
+
+CONSULTAR PRODUTOS/CATÁLOGO:
+Offline = SIM, usando base local.
+Online = SIM.
+
+CRIAR ORÇAMENTO/PEDIDO:
+Offline = SIM.
+Online = SIM.
+
+SALVAR:
+Offline = SIM.
+Online = SIM.
+
+GERAR PEDIDO:
+Offline = SIM.
+Online = SIM.
+
+ENVIAR PEDIDO/ORÇAMENTO:
+Offline = NÃO.
+Online = SIM, somente por ação explícita.
+
+SINCRONIZAR BASE COMERCIAL:
+Offline = NÃO.
+Online = SIM, manualmente.
+
+RECEBER NOVA TAREFA/MISSÃO EM TEMPO REAL:
+Offline = NÃO.
+Online = SIM.
+
+EXECUTAR TAREFA/MISSÃO JÁ RECEBIDA:
+Offline = SIM.
+Online = SIM.
+
+TRANSMITIR RETORNO DE MISSÃO:
+Offline = armazenar pendente.
+Online = pode transmitir automaticamente.
+
+RELATÓRIOS E COMISSÕES:
+Offline = NÃO.
+Online = SIM.
+
+SISTEMA ONLINE:
+Offline = NÃO.
+Online = SIM.
+
+RASTREAMENTO EM TEMPO REAL:
+Offline = NÃO.
+Online = SIM, respeitando permissões.
+
+==================================================
+50. REGRAS-MÃE IMUTÁVEIS
+==================================================
+
+R1. O App deve continuar vendendo offline depois da primeira sincronização válida.
+
+R2. A sincronização comercial é manual.
+
+R3. Sincronizar NUNCA envia Pedido ou Orçamento.
+
+R4. Pedido/Orçamento somente é enviado quando o vendedor manda explicitamente.
+
+R5. Tarefas/Missões são a exceção e podem possuir comunicação automática.
+
+R6. Documento enviado fica bloqueado no App.
+
+R7. Documento duplicado sempre nasce como novo Orçamento.
+
+R8. O preço aplicável é o preço da base offline mais atual disponível.
+
+R9. Produto inativo não pode ser utilizado.
+
+R10. Cliente inativo não pode ser utilizado.
+
+R11. Sem permissão para venda sem estoque, a quantidade deve ser limitada ao estoque disponível, sem rejeitar desnecessariamente o restante do Pedido.
+
+R12. Orçamento não reserva nem movimenta estoque.
+
+R13. Histórico central de Pedidos/Orçamentos nunca é baixado para o App.
+
+R14. Bancos/contextos locais de usuários, empresas e dispositivos não podem se misturar.
+
+R15. Logout não apaga dados locais.
+
+R16. Conta bloqueada impede nova sincronização comercial, mas não destrói a operação offline existente.
+
+R17. Conta bloqueada ainda pode transmitir Pedido/Orçamento ao Sistema Online.
+
+R18. CPF/CNPJ existente dentro da mesma empresa deve impedir criação desnecessária de cliente duplicado.
+
+R19. Toda transmissão de documento deve possuir proteção contra duplicidade/idempotência.
+
+R20. Uma sincronização interrompida nunca pode inutilizar a última base válida.
+
+==================================================
+51. CRITÉRIOS DE ACEITE
+==================================================
+
+O desenvolvimento somente deve ser considerado funcionalmente correto se, no mínimo, atender aos seguintes testes:
+
+TESTE 1:
+Primeiro login sem internet não funciona.
+Depois da primeira sincronização válida, vendas offline funcionam.
+
+TESTE 2:
+Trocar de empresa nunca mistura dados entre empresas.
+
+TESTE 3:
+Usuários diferentes no mesmo aparelho nunca visualizam pendências locais uns dos outros.
+
+TESTE 4:
+Sincronizar não envia Pedido nem Orçamento.
+
+TESTE 5:
+Pedido/Orçamento não é marcado como enviado sem confirmação do servidor.
+
+TESTE 6:
+Reenviar a mesma transmissão após perda de resposta não cria documento duplicado.
+
+TESTE 7:
+Documento enviado fica somente leitura no App.
+
+TESTE 8:
+Duplicar documento enviado cria novo ORÇAMENTO, com data/vendedor atuais e campos complementares vazios.
+
+TESTE 9:
+Produto inativo não permanece utilizável em nova venda.
+
+TESTE 10:
+Cliente inativo não permanece utilizável em nova venda.
+
+TESTE 11:
+Venda sem estoque = NÃO:
+Pedido solicita 10 e servidor possui 6 → documento final = 6.
+
+TESTE 12:
+Estoque zero para um item não rejeita desnecessariamente os demais itens do Pedido.
+
+TESTE 13:
+Orçamento não movimenta estoque.
+
+TESTE 14:
+Orçamento de 10 convertido online em Pedido com somente 6 disponíveis e venda sem estoque = NÃO → Pedido = 6.
+
+TESTE 15:
+Queda de internet durante sincronização não substitui a última base válida por dados incompletos.
+
+TESTE 16:
+Aparelho novo não baixa histórico central de Pedidos/Orçamentos.
+
+TESTE 17:
+Logout não apaga documentos locais.
+
+TESTE 18:
+Conta bloqueada impede sincronização comercial, mas continua permitindo operação offline com a última base válida.
+
+TESTE 19:
+Conta bloqueada ainda permite envio explícito de Pedido/Orçamento ao Sistema Online.
+
+TESTE 20:
+Tarefa/Missão recebida pode ser executada offline.
+
+TESTE 21:
+Retorno de Missão pendente pode ser transmitido automaticamente quando a conexão voltar.
+
+TESTE 22:
+Relatórios e Comissões exigem internet.
+
+TESTE 23:
+Sistema Online exige internet e deve utilizar login/contexto integrado sempre que possível.
+
+TESTE 24:
+CPF/CNPJ já existente na mesma empresa não gera cliente duplicado.
+
+==================================================
+52. DIRETRIZES TÉCNICAS
+==================================================
+
+Você, Base44, deve implementar a solução completa respeitando estas regras funcionais.
+
+Pode escolher a arquitetura técnica mais adequada dentro das capacidades da plataforma para:
+- persistência local;
+- autenticação;
+- APIs;
+- cache;
+- sincronização;
+- tratamento de erros;
+- filas necessárias exclusivamente onde permitidas;
+- segurança;
+- controle de sessão;
+- notificações;
+- integração online;
+- rastreamento;
+- observabilidade.
+
+PORÉM:
+
+não altere uma regra de negócio apenas para facilitar a implementação.
+
+Se alguma limitação técnica do Base44 impedir o cumprimento literal de uma regra, NÃO substitua silenciosamente a regra por outra.
+
+Nesse caso:
+1. identifique claramente a limitação;
+2. preserve todo o restante da especificação;
+3. indique qual integração, serviço externo, API ou implementação complementar é necessária.
+
+Não invente regras comerciais não descritas.
+
+Não torne campos opcionais em obrigatórios.
+
+Não crie sincronização automática da base comercial.
+
+Não crie upload automático de Pedidos/Orçamentos.
+
+Não baixe histórico central de Pedidos/Orçamentos.
+
+Não permita edição de documento depois de enviado.
+
+Não misture empresas, usuários ou bases locais.
+
+Não copie marcas ou identidade visual de sistemas usados apenas como referência.
+
+==================================================
+53. PRIORIDADE DE IMPLEMENTAÇÃO
+==================================================
+
+Construa o projeto considerando esta ordem lógica:
+
+FASE 1 — FUNDAÇÃO
+- estrutura do App;
+- autenticação;
+- usuário;
+- empresa ativa;
+- isolamento;
+- banco/local persistence;
+- primeira sincronização.
+
+FASE 2 — OPERAÇÃO COMERCIAL
+- Clientes;
+- Produtos;
+- Catálogo;
+- Orçamento;
+- Pedido;
+- regras de preço;
+- regras de estoque;
+- salvamento offline.
+
+FASE 3 — TRANSMISSÃO
+- envio explícito;
+- idempotência;
+- número oficial;
+- bloqueio pós-envio;
+- tratamento de falhas;
+- duplicação.
+
+FASE 4 — SINCRONIZAÇÃO
+- clientes pendentes;
+- atualização da base;
+- sincronização transacional;
+- conta bloqueada;
+- última sincronização.
+
+FASE 5 — INTEGRAÇÕES
+- Tarefas/Missões;
+- notificações;
+- localização/Mapa da Equipe;
+- Relatórios e Comissões;
+- Sistema Online;
+- Ajuda;
+- IA no WhatsApp em nível previsto.
+
+==================================================
+54. RESULTADO ESPERADO
+==================================================
+
+Entregar um App de Vendas Óris360°:
+
+- profissional;
+- limpo;
+- responsivo;
+- pensado prioritariamente para celular;
+- rápido em campo;
+- funcional offline;
+- seguro contra duplicidade;
+- integrado ao Sistema Online;
+- preparado para múltiplos usuários;
+- preparado para múltiplas empresas;
+- coerente com as regras de estoque;
+- coerente com as regras de sincronização;
+- capaz de operar com internet instável;
+- sem perder a última base local válida.
+
+Antes de considerar a implementação concluída, revise o projeto inteiro contra as 20 REGRAS-MÃE e os CRITÉRIOS DE ACEITE acima.
+
+Nenhuma funcionalidade visual deve ser considerada concluída se a regra de negócio correspondente não estiver funcionando.
+
+FIM DO PROMPT MESTRE.
