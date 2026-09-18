@@ -250,7 +250,7 @@ export function App() {
     setPage('orders');
     setDocumentId(null);
     setMenuOpen(true);
-    saveLiveSession(localStorage, { auth: sessionAuth, activeCompanyId: companyId });
+    saveLiveSession(sessionStorage, { auth: sessionAuth, activeCompanyId: companyId });
 
     if (readOnline()) {
       const missions = await gateway.fetchMissions(gatewayContext);
@@ -265,7 +265,7 @@ export function App() {
 
   useEffect(() => {
     const unsubscribe = subscribeConnectivity(setOnline);
-    const saved = loadLiveSession(localStorage);
+    const saved = loadLiveSession(sessionStorage);
     if (saved) {
       setAuth(saved.auth);
       if (saved.activeCompanyId) {
@@ -324,7 +324,7 @@ export function App() {
       if (result.companies.length === 1) {
         await activateCompany(result, result.companies[0].id);
       } else {
-        saveLiveSession(localStorage, { auth: result });
+        saveLiveSession(sessionStorage, { auth: result });
         setStage('companies');
       }
     } catch (error) {
@@ -404,7 +404,7 @@ export function App() {
   };
 
   const logout = () => {
-    clearLiveSession(localStorage);
+    clearLiveSession(sessionStorage);
     setActive(null);
     setAuth(null);
     setStage('landing');
@@ -418,7 +418,7 @@ export function App() {
     setStage('companies');
     setMenuOpen(false);
     setActive(null);
-    saveLiveSession(localStorage, { auth });
+    saveLiveSession(sessionStorage, { auth });
   };
 
   const runtimeValue = useMemo(() => active ? {
