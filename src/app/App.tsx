@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthResult, CompanyRef, Mission, SalesDocument } from '../domain/models';
 import { OrisDb, type ContextRecord } from '../infrastructure/db';
-import { DemoOrisGateway, DEMO_CREDENTIALS } from '../infrastructure/demoOrisGateway';
+import { DEMO_CREDENTIALS } from '../infrastructure/demoOrisGateway';
+import { createOrisGateway } from '../infrastructure/gatewayFactory';
 import { readOnline, subscribeConnectivity } from '../infrastructure/connectivity';
 import { getOrCreateDeviceId, makeScopeKey } from '../infrastructure/scope';
 import type { GatewayContext } from '../infrastructure/orisGateway';
 import { synchronizeCommercialBase } from '../services/sync';
 import { flushMissionReturns } from '../services/missions';
+import { canEnterCompanyContext } from './accessPolicy';
 import {
   cacheOfflineCredentials,
   clearLiveSession,
@@ -40,7 +42,7 @@ interface Notice {
 }
 
 const db = new OrisDb();
-const gateway = new DemoOrisGateway();
+const gateway = createOrisGateway();
 
 function pageTitle(page: MainPage | 'editor'): string {
   const titles: Record<MainPage | 'editor', string> = {
@@ -206,11 +208,12 @@ export function App() {
     };
 
     let context = await db.contexts.get(scopeKey);
+    const currentOnline = readOnline();
+    if (!canEnterCompanyContext(currentOnline, context?.lastSuccessfulSyncAt)) {
+      notify('O primeiro acesso desta empresa neste aparelho exige internet.', 'warning');
+      return false;
+    }
     if (!context?.lastSuccessfulSyncAt) {
-      if (!readOnline()) {
-        notify('O primeiro acesso desta empresa neste aparelho exige internet.', 'warning');
-        return false;
-      }
 
       const placeholder: ContextRecord = {
         scopeKey,
