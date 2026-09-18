@@ -115,9 +115,9 @@ describe('manual commercial synchronization', () => {
     expect(gateway.documentSendCalls).toBe(0);
     expect(gateway.customerCalls.sort()).toEqual(['pending-bad', 'pending-ok']);
     expect(result.customerErrors).toHaveLength(1);
-    expect((await db!.customers.get('pending-bad'))?.pendingSync).toBe(true);
+    expect((await db!.customers.get([scopeKey, 'pending-bad']))?.pendingSync).toBe(true);
     expect((await db!.contexts.get(scopeKey))?.lastSuccessfulSyncAt).toBe('2026-09-18T12:00:00Z');
-    expect(await db!.products.get('old-product')).toBeUndefined();
+    expect(await db!.products.get([scopeKey, 'old-product'])).toBeUndefined();
   });
 
   it('R20 preserves last valid base and timestamp when snapshot download fails', async () => {
@@ -128,7 +128,7 @@ describe('manual commercial synchronization', () => {
     const result = await synchronizeCommercialBase({ db: db!, gateway, context, online: true });
 
     expect(result.ok).toBe(false);
-    expect((await db!.products.get('old-product'))?.price).toBe(5);
+    expect((await db!.products.get([scopeKey, 'old-product']))?.price).toBe(5);
     expect((await db!.contexts.get(scopeKey))?.lastSuccessfulSyncAt).toBe('2026-09-17T00:00:00Z');
   });
 
@@ -141,7 +141,7 @@ describe('manual commercial synchronization', () => {
     const result = await synchronizeCommercialBase({ db: db!, gateway, context, online: true });
 
     expect(result).toMatchObject({ ok: false, reason: 'account-blocked' });
-    expect(await db!.products.get('old-product')).toBeDefined();
+    expect(await db!.products.get([scopeKey, 'old-product'])).toBeDefined();
   });
 
   it('offline sync fails without changing last successful sync', async () => {

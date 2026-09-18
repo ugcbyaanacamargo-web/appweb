@@ -93,7 +93,7 @@ describe('explicit document transmission',()=>{
     const result=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:false});
     expect(result).toMatchObject({ok:false,reason:'offline'});
     expect(gateway.documentCalls).toBe(0);
-    expect((await db!.documents.get('doc1'))?.state).toBe('local');
+    expect((await db!.documents.get([scopeKey, 'doc1']))?.state).toBe('local');
   });
 
   it('R5/R6 confirms server before marking sent, syncs related client first, reprices and locks',async()=>{
@@ -103,7 +103,7 @@ describe('explicit document transmission',()=>{
     expect(result.ok).toBe(true);
     expect(gateway.customerCalls).toBe(1);
     expect(gateway.documentCalls).toBe(1);
-    const stored=await db!.documents.get('doc1');
+    const stored=await db!.documents.get([scopeKey, 'doc1']);
     expect(stored?.state).toBe('sent');
     expect(stored?.officialNumber).toBe('PD-0001');
     expect(stored?.items).toEqual([{productId:'p1',quantity:6,unitPrice:12}]);
@@ -115,7 +115,7 @@ describe('explicit document transmission',()=>{
     gateway.failSend=true;
     const result=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
     expect(result.ok).toBe(false);
-    expect((await db!.documents.get('doc1'))?.state).toBe('local');
+    expect((await db!.documents.get([scopeKey, 'doc1']))?.state).toBe('local');
   });
 
   it('R17 blocked account still allows explicit document transmission',async()=>{
@@ -132,7 +132,7 @@ describe('explicit document transmission',()=>{
     const gateway=new SendGateway();
     gateway.acceptedQuantity=2;
     await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
-    expect((await db!.documents.get('doc1'))?.items[0].quantity).toBe(10);
+    expect((await db!.documents.get([scopeKey, 'doc1']))?.items[0].quantity).toBe(10);
   });
 
   it('R19 retry with same idempotency key cannot create a second remote document',async()=>{
@@ -142,11 +142,11 @@ describe('explicit document transmission',()=>{
     const first=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
     expect(first.ok).toBe(true);
     // Simulate lost local confirmation: restore local state but keep same idempotency key.
-    const sent=await db!.documents.get('doc1');
+    const sent=await db!.documents.get([scopeKey, 'doc1']);
     await db!.documents.put({...sent!,state:'local',officialNumber:undefined,sentAt:undefined});
     const second=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
     expect(second.ok).toBe(true);
     expect(gateway.seenKeys.size).toBe(1);
-    expect((await db!.documents.get('doc1'))?.officialNumber).toBe('PD-0001');
+    expect((await db!.documents.get([scopeKey, 'doc1']))?.officialNumber).toBe('PD-0001');
   });
 });

@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import type {
   CommercialSnapshot,
   Customer,
@@ -6,6 +6,7 @@ import type {
   Product,
   SalesDocument
 } from '../domain/models';
+import { repriceAndValidateLocal } from '../domain/rules';
 
 export interface ContextRecord {
   scopeKey: string;
@@ -18,20 +19,20 @@ export interface ContextRecord {
 }
 
 export class OrisDb extends Dexie {
-  contexts!: EntityTable<ContextRecord, 'scopeKey'>;
-  customers!: EntityTable<Customer, 'id'>;
-  products!: EntityTable<Product, 'id'>;
-  documents!: EntityTable<SalesDocument, 'id'>;
-  missions!: EntityTable<Mission, 'id'>;
+  contexts!: Table<ContextRecord, string>;
+  customers!: Table<Customer, [string, string]>;
+  products!: Table<Product, [string, string]>;
+  documents!: Table<SalesDocument, [string, string]>;
+  missions!: Table<Mission, [string, string]>;
 
   constructor(name = 'oris360-sales') {
     super(name);
     this.version(1).stores({
       contexts: 'scopeKey',
-      customers: 'id, scopeKey, [scopeKey+taxId], [scopeKey+pendingSync]',
-      products: 'id, scopeKey, [scopeKey+active]',
-      documents: 'id, scopeKey, [scopeKey+state], [scopeKey+kind], createdAt',
-      missions: 'id, scopeKey, [scopeKey+pendingReturn], assignedAt'
+      customers: '[scopeKey+id], scopeKey, [scopeKey+taxId]',
+      products: '[scopeKey+id], scopeKey, [scopeKey+active]',
+      documents: '[scopeKey+id], scopeKey, [scopeKey+state], [scopeKey+kind], createdAt',
+      missions: '[scopeKey+id], scopeKey, [scopeKey+pendingReturn], assignedAt'
     });
   }
 }
@@ -48,10 +49,60 @@ export async function getScopeDocuments(db: OrisDb, scopeKey: string): Promise<S
   return db.documents.where('scopeKey').equals(scopeKey).toArray();
 }
 
+export async function getScopeMissions(db: OrisDb, scopeKey: string): Promise<Mission[]> {
+  return db.missions.where('scopeKey').equals(scopeKey).toArray();
+}
+
 export async function replaceCommercialSnapshot(
-  _db: OrisDb,
-  _scopeKey: string,
-  _snapshot: CommercialSnapshot
+  db: OrisDb,
+  scopeKey: string,
+  snapshot: CommercialSnapshot
 ): Promise<void> {
-  // RED baseline: implemented after transactional tests.
+  await db.transaction(
+    'rw',
+    db.contexts,
+    db.customers,
+    db.products,
+    db.documents,
+    async () => {
+      const context = await db.contexts.get(scopeKey);
+      if (!context) {
+        throw new Error('LOCAL_CONTEXT_NOT_INITIALIZED');
+      }
+
+      await db.customers.where('scopeKey').equals(scopeKey).delete();
+      await db.products.where('scopeKey').equals(scopeKey).delete();
+
+      const customers = snapshot.customers.map(customer => ({
+        ...customer,
+        scopeKey,
+        pendingSync: false
+      }));
+      const products = snapshot.products.map(product => ({ ...product, scopeKey }));
+
+      if (customers.length) await db.customers.bulkPut(customers);
+      if (products.length) await db.products.bulkPut(products);
+
+      const localDocuments = await db.documents
+        .where('[scopeKey+state]')
+        .equals([scopeKey, 'local'])
+        .toArray();
+
+      for (const document of localDocuments) {
+        const recalculated = repriceAndValidateLocal(
+          document,
+          products,
+          snapshot.settings.allowSaleWithoutStock
+        );
+        await db.documents.put(recalculated);
+      }
+
+      await db.contexts.put({
+        ...context,
+        lastSuccessfulSyncAt: snapshot.synchronizedAt,
+        snapshotVersion: snapshot.version,
+        accountBlocked: snapshot.settings.accountBlocked
+      });
+    }
+  );
 }

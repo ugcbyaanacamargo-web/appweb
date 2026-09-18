@@ -33,7 +33,7 @@ describe('missions automatic exception',()=>{
     const done=await completeMissionOffline(db,mission,{notes:'feito'},'2026-09-18T10:00:00Z');
     expect(done.completed).toBe(true);
     expect(done.pendingReturn).toBe(true);
-    expect((await db.missions.get('m1'))?.notes).toBe('feito');
+    expect((await db.missions.get([scopeKey, 'm1']))?.notes).toBe('feito');
   });
 
   it('TEST21 pending mission return may flush automatically when online',async()=>{
@@ -41,9 +41,9 @@ describe('missions automatic exception',()=>{
     await db.missions.put({id:'m1',scopeKey,title:'T',completed:true,pendingReturn:true,assignedAt:'x'});
     const gateway=new MissionGateway();
     expect(await flushMissionReturns({db,gateway,context,online:false})).toBe(0);
-    expect((await db.missions.get('m1'))?.pendingReturn).toBe(true);
+    expect((await db.missions.get([scopeKey, 'm1']))?.pendingReturn).toBe(true);
     expect(await flushMissionReturns({db,gateway,context,online:true})).toBe(1);
     expect(gateway.returns).toBe(1);
-    expect((await db.missions.get('m1'))?.pendingReturn).toBe(false);
+    expect((await db.missions.get([scopeKey, 'm1']))?.pendingReturn).toBe(false);
   });
 });

@@ -30,6 +30,24 @@ describe('local database isolation', () => {
     expect(new Set([a, b, c]).size).toBe(3);
   });
 
+  it('R14 keeps identical server IDs isolated in different scopes', async () => {
+    db = new OrisDb('collision-test-' + crypto.randomUUID());
+    const base = {
+      id: 'same-id',
+      name: 'Cliente',
+      taxId: '123',
+      active: true,
+      pendingSync: false,
+      updatedAt: '2026-09-18T00:00:00Z'
+    };
+    await db.customers.bulkPut([
+      { ...base, scopeKey: 'd:u1:c1' },
+      { ...base, scopeKey: 'd:u1:c2', name: 'Outro contexto' }
+    ]);
+    expect((await db.customers.get(['d:u1:c1', 'same-id']))?.name).toBe('Cliente');
+    expect((await db.customers.get(['d:u1:c2', 'same-id']))?.name).toBe('Outro contexto');
+  });
+
   it('R14 queries never leak customers/products/documents from another scope', async () => {
     db = new OrisDb('scope-test-' + crypto.randomUUID());
     const s1 = 'd:u1:c1';
@@ -48,12 +66,12 @@ describe('local database isolation', () => {
       updatedAt: '2026-09-18T00:00:00Z', idempotencyKey: 'idem-' + id
     });
 
-    await db.customers.bulkPut([customer('c-a', s1), customer('c-b', s2)]);
-    await db.products.bulkPut([product('p-a', s1), product('p-b', s2)]);
-    await db.documents.bulkPut([document('d-a', s1), document('d-b', s2)]);
+    await db.customers.bulkPut([customer('same', s1), customer('same', s2)]);
+    await db.products.bulkPut([product('same', s1), product('same', s2)]);
+    await db.documents.bulkPut([document('same', s1), document('same', s2)]);
 
-    expect((await getScopeCustomers(db, s1)).map(x => x.id)).toEqual(['c-a']);
-    expect((await getScopeProducts(db, s1)).map(x => x.id)).toEqual(['p-a']);
-    expect((await getScopeDocuments(db, s1)).map(x => x.id)).toEqual(['d-a']);
+    expect((await getScopeCustomers(db, s1)).map(x => x.scopeKey)).toEqual([s1]);
+    expect((await getScopeProducts(db, s1)).map(x => x.scopeKey)).toEqual([s1]);
+    expect((await getScopeDocuments(db, s1)).map(x => x.scopeKey)).toEqual([s1]);
   });
 });
