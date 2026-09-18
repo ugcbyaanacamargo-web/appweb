@@ -70,7 +70,7 @@ async function seed(kind: 'quote'|'order'='order') {
   db=new OrisDb('send-test-'+crypto.randomUUID());
   await db.contexts.put({
     scopeKey,userName:'User',companyName:'Company',activatedAt:'2026-09-17T00:00:00Z',
-    lastSuccessfulSyncAt:'2026-09-18T10:00:00Z',snapshotVersion:'v1',accountBlocked:false
+    lastSuccessfulSyncAt:'2026-09-18T10:00:00Z',snapshotVersion:'v1',accountBlocked:false,allowSaleWithoutStock:false
   });
   await db.products.put({
     id:'p1',scopeKey,name:'Produto',sku:'P1',active:true,price:12,stock:10,updatedAt:'2026-09-18T10:00:00Z'
@@ -125,6 +125,16 @@ describe('explicit document transmission',()=>{
     const gateway=new SendGateway();
     const result=await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
     expect(result.ok).toBe(true);
+  });
+
+  it('R11 preserves requested order quantity when sale without stock is enabled',async()=>{
+    await seed('order');
+    const row=await db!.contexts.get(scopeKey);
+    await db!.contexts.put({...row!,allowSaleWithoutStock:true});
+    const gateway=new SendGateway();
+    gateway.acceptedQuantity=99;
+    await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
+    expect((await db!.documents.get([scopeKey,'doc1']))?.items[0].quantity).toBe(10);
   });
 
   it('R12 quote is sent with full quantity even when server order capacity would be lower',async()=>{
