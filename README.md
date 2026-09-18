@@ -1,69 +1,153 @@
-# appweb
+# appweb — Óris360° Vendas Mobile
 
-Repositório-orquestrador para desenvolvimento de aplicações web assistido por agentes de IA.
+Repositório do **App de Vendas Mobile Óris360°**, uma PWA React/TypeScript offline-first, além do motor de desenvolvimento assistido já mantido neste repositório.
 
-A regra central é: **usar primeiro capacidades maduras que já existem, manter o contexto no próprio repositório e provar mudanças antes de integrar**.
+## Óris360° Vendas
 
-## Como o motor trabalha
+A aplicação foi construída para continuar operando comercialmente sem internet depois do primeiro login online e da primeira sincronização válida da empresa naquele aparelho.
 
-Para todo trabalho futuro no site:
+### Funcionalidades implementadas
 
-1. ler `AGENTS.md`;
-2. restaurar `PROJECT_STATE.md` e `DECISIONS.md`;
-3. escolher as skills em `docs/SKILL_ROUTER.md`;
-4. pesquisar semanticamente o código e padrões existentes;
-5. trabalhar em branch isolada;
-6. revisar/testar/validar;
-7. persistir o novo estado do projeto.
+- login e criação de conta em modo DEMO;
+- autenticação offline depois da primeira ativação válida;
+- múltiplas empresas por usuário;
+- isolamento local por aparelho + usuário + empresa;
+- IndexedDB/Dexie;
+- Pedidos com exatamente as abas **TODOS** e **NÃO ENVIADOS**;
+- Orçamento → Pedido sem criar documento duplicado;
+- salvamento local separado de geração e transmissão;
+- transmissão somente por ação explícita;
+- idempotência;
+- bloqueio permanente no App após confirmação do servidor;
+- duplicação de documento enviado sempre como novo Orçamento;
+- clientes criados/editados offline;
+- prevenção de duplicidade por CPF/CNPJ;
+- produtos ativos, preço atual da base offline e regras de estoque;
+- sincronização comercial manual e transacional;
+- conta bloqueada preservando operação offline e envio explícito;
+- Tarefas/Missões com execução offline e retorno automático permitido;
+- localização operacional condicionada a conexão/permissão;
+- Relatórios e Comissões online-only;
+- Sistema Online online-only;
+- Ajuda com contatos vindos de configuração central;
+- IA no WhatsApp preparada para integração;
+- PWA/service worker;
+- configuração pronta para Netlify.
 
-Isso dá continuidade entre sessões sem depender apenas do histórico da conversa.
+### Modo DEMO
 
-## Estrutura do motor
+Enquanto a API real Óris360° não estiver conectada, o App utiliza `DemoOrisGateway`, persistido no navegador.
 
-- `vendor/engines/gstack` — produto, engenharia, review, QA, segurança, contexto e release.
-- `vendor/engines/superpowers` — metodologia, planejamento, TDD, debugging e verificação.
-- `vendor/skills/anthropic` — coleção pública de Agent Skills e exemplos de especificação.
-- `vendor/skills/engineering` — UI, contexto, API, revisão, segurança, performance e engenharia.
-- `vendor/skills/skills-cli` — CLI aberta para descobrir/instalar/usar Agent Skills.
-- `vendor/skills/vercel-agent-skills` — React/Next.js, performance, UI e web design guidelines.
-- `vendor/memory/mem0` — memória persistente para futura integração na aplicação.
-- `vendor/mcp/reference-servers` — servidores MCP de referência.
-- `vendor/app-builder/bolt-diy` — construtor full-stack multi-LLM.
-- `vendor/app-builder/dyad` — construtor local de apps por IA.
+Credenciais DEMO:
 
-## Arquivos de continuidade
-
-- `PROJECT_STATE.md` — onde o projeto está agora.
-- `DECISIONS.md` — decisões que não devem ser esquecidas/contraditas.
-- `docs/SKILL_ROUTER.md` — quais capacidades usar para cada tipo de trabalho.
-- `AGENTS.md` — contrato obrigatório para agentes.
-- `ENGINE_MANIFEST.md` — versões/SHAs dos projetos upstream.
-
-## Clonar corretamente
-
-```bash
-git clone --recurse-submodules https://github.com/ugcbyaanacamargo-web/appweb.git
-cd appweb
-git submodule update --init --recursive
+```text
+vendedor@demo.oris360.local
+demo1234
 ```
 
-## Validação do motor
+O modo DEMO possui duas empresas para testar isolamento de contexto e regras diferentes de estoque.
+
+## API real
+
+A interface externa é `src/infrastructure/orisGateway.ts`.
+
+O ponto único para trocar o backend DEMO pela API real é:
+
+```text
+src/infrastructure/gatewayFactory.ts
+```
+
+O contrato completo da integração está em:
+
+- `docs/API_INTEGRATION.md`
+
+Nenhum endpoint, token, telefone ou e-mail oficial foi inventado.
+
+## Aceite
+
+A rastreabilidade dos 24 critérios funcionais está em:
+
+- `docs/ACCEPTANCE_MATRIX.md`
+
+Os testes cobrem domínio, isolamento, sincronização, transmissão, idempotência, cliente offline, missões, bloqueio, estoque e histórico local.
+
+## Desenvolvimento
+
+```bash
+npm install
+npm run dev
+```
+
+Testes:
+
+```bash
+npm run test:run
+```
+
+Build de produção:
+
+```bash
+npm run build
+```
+
+Saída:
+
+```text
+dist/
+```
+
+## Publicação no Netlify
+
+O repositório já contém `netlify.toml`.
+
+Configuração esperada:
+
+```text
+Build command: npm run build
+Publish directory: dist
+Node: 22
+```
+
+Ao importar este repositório no Netlify, a configuração é lida automaticamente.
+
+O App inclui:
+- fallback SPA;
+- service worker;
+- manifest PWA;
+- headers de segurança;
+- política de cache específica para o service worker.
+
+## Arquitetura
+
+- React 19
+- TypeScript
+- Vite
+- Dexie / IndexedDB
+- vite-plugin-pwa
+- Vitest
+- GitHub Actions
+- Netlify-ready
+
+## Motor do repositório
+
+O projeto também mantém os motores/skills upstream em `vendor/` e o contrato de trabalho em:
+
+- `AGENTS.md`
+- `docs/SKILL_ROUTER.md`
+- `docs/RUNTIME.md`
+- `ENGINE_MANIFEST.md`
+
+Para validar o motor:
 
 ```bash
 python scripts/validate_engine.py
 ```
 
-O GitHub Actions executa essa validação automaticamente em pushes e pull requests.
+## Segurança
 
-## Importante sobre ChatGPT
-
-Guardar projetos dentro do GitHub **não instala automaticamente essas capacidades no runtime do ChatGPT**.
-
-O repositório é a fonte persistente. A execução depende das ferramentas/skills realmente disponíveis no host. `docs/RUNTIME.md` explica essa separação.
-
-## Segurança e licenças
-
-- MCP reference servers não são considerados produção sem revisão de segurança.
-- Repositórios com licença mista/indefinida exigem leitura do aviso upstream antes de copiar código.
-- Submódulos ficam fixados por commit e não avançam automaticamente.
-- Segredos nunca entram em `PROJECT_STATE.md`, `DECISIONS.md` ou commits.
+- credencial offline persistente protegida por PBKDF2 + AES-GCM;
+- sessão ativa em `sessionStorage`;
+- CSP e headers de segurança no Netlify;
+- auditoria de dependências runtime no CI;
+- submódulos fixados por SHA;
+- nenhum segredo deve ser commitado no repositório.
