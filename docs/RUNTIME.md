@@ -1,53 +1,59 @@
 # Runtime: o que realmente fica ativo
 
+## Ponto de entrada
+
+Qualquer sessão que trabalhe no appweb deve iniciar em:
+
+`AGENTS.md` → `docs/brain/INDEX.md`
+
+O cérebro roteia a tarefa para a especificação, estado, decisões, nós e skills necessários sem carregar todo o repositório.
+
 ## O que o GitHub fornece
 
-Este repositório guarda versões completas e fixadas dos projetos upstream como submódulos e também mantém o contrato operacional do projeto.
+Este repositório guarda:
 
-A camada persistente inclui:
-
-- `AGENTS.md` — regras obrigatórias;
-- `docs/SKILL_ROUTER.md` — roteamento por intenção;
-- `PROJECT_STATE.md` — estado atual;
-- `DECISIONS.md` — decisões duráveis;
-- specs/planos em `docs/superpowers/`.
+- o código do Óris360°;
+- a especificação funcional canônica;
+- `AGENTS.md`;
+- `docs/brain/`;
+- `docs/SKILL_ROUTER.md`;
+- `PROJECT_STATE.md`;
+- `DECISIONS.md`;
+- versões completas e fixadas dos projetos upstream como submódulos;
+- testes e workflows do GitHub Actions.
 
 ## O que o GitHub não faz
 
-Somente adicionar um repositório em `vendor/` **não concede novas permissões nem carrega automaticamente código dentro do ChatGPT Web**.
+Adicionar um projeto em `vendor/` não concede novas permissões e não executa automaticamente aquela ferramenta dentro do ChatGPT Web.
 
 Para executar uma capacidade, ela precisa existir no runtime atual como plugin, skill, conector, ferramenta ou ambiente compatível.
 
-## Como este projeto usa as skills
+Quando não existir execução nativa, o agente pode ler a versão fixada da skill e aplicar suas instruções usando as ferramentas que realmente possui.
 
-1. O agente restaura o estado do projeto no GitHub.
-2. Identifica semanticamente o tipo de tarefa.
-3. Consulta `docs/SKILL_ROUTER.md`.
-4. Usa a skill nativa quando ela estiver realmente disponível.
-5. Quando não estiver disponível, lê a skill upstream fixada e a usa como orientação aplicável às ferramentas existentes.
-6. Implementa em branch isolada.
-7. Valida/revisa.
-8. Atualiza o estado persistente.
+## Fluxo do ChatGPT Web + GitHub
 
-## Neste fluxo do ChatGPT
+1. restaurar contexto pelo cérebro;
+2. classificar a intenção;
+3. resolver skills;
+4. ler código/testes/contratos relacionados;
+5. implementar em branch isolada;
+6. push/PR;
+7. consultar GitHub Actions;
+8. corrigir qualquer gate obrigatório;
+9. atualizar estado/decisões;
+10. só então relatar conclusão com evidência.
 
-- gstack Workflows pode ser usado através do plugin `gstack-workflows` quando disponível.
-- Superpowers pode ser usado através das skills correspondentes quando disponíveis.
-- GitHub é acessado pelo conector autorizado.
-- Os submódulos fornecem fonte upstream persistente e auditável.
+## Testes automáticos
+
+O repositório usa:
+- Vitest para domínio/serviços/integração local;
+- ESLint para análise estática;
+- TypeScript + Vite para build;
+- Playwright em Chromium para jornadas E2E;
+- `scripts/validate_engine.py` para integridade do motor/cérebro.
 
 ## Memória
 
-`PROJECT_STATE.md` + `DECISIONS.md` formam a memória portátil do **trabalho do repositório**.
+`PROJECT_STATE.md` + `DECISIONS.md` são a memória portátil e auditável do trabalho do repositório.
 
-`vendor/memory/mem0` é infraestrutura para **memória da aplicação/agentes do produto**. Ela só será conectada ao site quando o requisito do produto justificar isso.
-
-## Outros ambientes
-
-- gstack nativo tem requisitos próprios.
-- Superpowers instala de forma diferente conforme o agente.
-- `vercel-labs/skills` oferece a CLI `npx skills`.
-- MCP precisa de um cliente MCP/configuração explícita.
-- Bolt.diy e Dyad são aplicações/ambientes separados.
-
-Consulte sempre o README/SKILL.md fixado antes de executar capacidades específicas.
+`vendor/memory/mem0` é infraestrutura opcional para memória da aplicação/agentes do produto e só deve ser integrada quando houver requisito real.

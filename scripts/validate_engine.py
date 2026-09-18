@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import configparser
+import json
 import pathlib
 import re
 import subprocess
@@ -18,6 +19,19 @@ REQUIRED_FILES = [
     ".gitmodules",
     "docs/RUNTIME.md",
     "docs/SKILL_ROUTER.md",
+    "docs/specs/README.md",
+    "docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt",
+    "docs/brain/INDEX.md",
+    "docs/brain/GRAPH.json",
+    "docs/brain/CI.md",
+    "docs/brain/DEFINITION_OF_DONE.md",
+    "package.json",
+    "eslint.config.js",
+    "playwright.config.ts",
+    "e2e/sales-flow.spec.ts",
+    ".github/workflows/app-ci.yml",
+    ".github/workflows/e2e.yml",
+    ".github/workflows/engine-integrity.yml",
 ]
 
 REQUIRED_ROUTER_TERMS = [
@@ -34,6 +48,30 @@ REQUIRED_ROUTER_TERMS = [
     "Browser / end-to-end QA",
     "Release / deploy",
 ]
+
+REQUIRED_ROUTES = {
+    "new_feature",
+    "bug_fix",
+    "integration",
+    "ui_change",
+    "security",
+    "release",
+}
+
+REQUIRED_NODES = {
+    "architecture",
+    "frontend",
+    "data_persistence",
+    "auth_security",
+    "offline_sync",
+    "sales_documents",
+    "api_integration",
+    "testing_qa",
+    "deploy_release",
+}
+
+REQUIRED_SKILLS = {"superpowers", "gstack", "ecc"}
+REQUIRED_GATES = {"ci", "definition_of_done"}
 
 
 def fail(message: str) -> None:
@@ -98,6 +136,143 @@ def gitlinks() -> dict[str, str]:
     return result
 
 
+def require_path(path: str, context: str) -> int:
+    if not (ROOT / path).is_file():
+        fail(f"{context} path missing: {path}")
+        return 1
+    return 0
+
+
+def validate_graph() -> int:
+    errors = 0
+    try:
+        graph = json.loads(read_text("docs/brain/GRAPH.json"))
+    except (json.JSONDecodeError, OSError) as exc:
+        fail(f"brain graph is invalid JSON: {exc}")
+        return 1
+
+    for key in ("entry", "canonicalSpec", "state", "decisions", "skillRouter"):
+        value = graph.get(key)
+        if not isinstance(value, str):
+            fail(f"brain graph missing string field: {key}")
+            errors += 1
+        else:
+            errors += require_path(value, f"brain graph {key}")
+
+    routes = graph.get("routes", {})
+    nodes = graph.get("nodes", {})
+    skills = graph.get("skills", {})
+    gates = graph.get("gates", {})
+
+    if set(routes) != REQUIRED_ROUTES:
+        fail(f"brain routes mismatch: expected {sorted(REQUIRED_ROUTES)}, got {sorted(routes)}")
+        errors += 1
+    if set(nodes) != REQUIRED_NODES:
+        fail(f"brain nodes mismatch: expected {sorted(REQUIRED_NODES)}, got {sorted(nodes)}")
+        errors += 1
+    if set(skills) != REQUIRED_SKILLS:
+        fail(f"brain skills mismatch: expected {sorted(REQUIRED_SKILLS)}, got {sorted(skills)}")
+        errors += 1
+    if set(gates) != REQUIRED_GATES:
+        fail(f"brain gates mismatch: expected {sorted(REQUIRED_GATES)}, got {sorted(gates)}")
+        errors += 1
+
+    for section_name, section in (("node", nodes), ("skill", skills), ("gate", gates)):
+        for item_name, item in section.items():
+            path = item.get("path") if isinstance(item, dict) else None
+            if not isinstance(path, str):
+                fail(f"brain {section_name} {item_name} missing path")
+                errors += 1
+            else:
+                errors += require_path(path, f"brain {section_name} {item_name}")
+
+    for route_name, route in routes.items():
+        if not isinstance(route, dict):
+            fail(f"brain route {route_name} is not an object")
+            errors += 1
+            continue
+        path = route.get("path")
+        if not isinstance(path, str):
+            fail(f"brain route {route_name} missing path")
+            errors += 1
+        else:
+            errors += require_path(path, f"brain route {route_name}")
+
+        for node_key in route.get("requires", []) + route.get("related", []):
+            if node_key not in nodes:
+                fail(f"brain route {route_name} references unknown node: {node_key}")
+                errors += 1
+        for skill_key in route.get("skills", []):
+            if skill_key not in skills:
+                fail(f"brain route {route_name} references unknown skill: {skill_key}")
+                errors += 1
+        for gate_key in route.get("next", []):
+            if gate_key not in gates:
+                fail(f"brain route {route_name} references unknown gate: {gate_key}")
+                errors += 1
+
+    return errors
+
+
+def validate_product_contract() -> int:
+    errors = 0
+    spec = read_text("docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt")
+    acceptance = read_text("docs/ACCEPTANCE_MATRIX.md")
+
+    for i in range(1, 21):
+        if f"R{i}." not in spec:
+            fail(f"master specification missing immutable rule R{i}")
+            errors += 1
+
+    for i in range(1, 25):
+        if f"TESTE {i}:" not in spec:
+            fail(f"master specification missing acceptance test {i}")
+            errors += 1
+        if f"| {i} |" not in acceptance:
+            fail(f"acceptance matrix missing test row {i}")
+            errors += 1
+
+    if "REGRAS-MÃE IMUTÁVEIS" not in spec:
+        fail("master specification missing REGRAS-MÃE IMUTÁVEIS section")
+        errors += 1
+    if "CRITÉRIOS DE ACEITE" not in spec:
+        fail("master specification missing CRITÉRIOS DE ACEITE section")
+        errors += 1
+
+    return errors
+
+
+def validate_ci_contract() -> int:
+    errors = 0
+    package = json.loads(read_text("package.json"))
+    scripts = package.get("scripts", {})
+    for script in ("lint", "test:run", "build", "test:e2e"):
+        if script not in scripts:
+            fail(f"package.json missing required script: {script}")
+            errors += 1
+
+    app_ci = read_text(".github/workflows/app-ci.yml")
+    e2e_ci = read_text(".github/workflows/e2e.yml")
+    engine_ci = read_text(".github/workflows/engine-integrity.yml")
+
+    for command in ("npm run lint", "npm run test:run", "npm run build"):
+        if command not in app_ci:
+            fail(f"app-ci missing command: {command}")
+            errors += 1
+
+    if "playwright install --with-deps chromium" not in e2e_ci:
+        fail("e2e workflow does not install Chromium")
+        errors += 1
+    if "npm run test:e2e" not in e2e_ci:
+        fail("e2e workflow does not run Playwright tests")
+        errors += 1
+    if "python scripts/validate_engine.py" not in engine_ci:
+        fail("engine-integrity workflow does not run validator")
+        errors += 1
+
+    return errors
+
+
 def main() -> int:
     errors = 0
 
@@ -111,6 +286,7 @@ def main() -> int:
 
     router = read_text("docs/SKILL_ROUTER.md")
     agents = read_text("AGENTS.md")
+    brain_index = read_text("docs/brain/INDEX.md")
 
     modules = parse_gitmodules()
     links = gitlinks()
@@ -177,21 +353,33 @@ def main() -> int:
             errors += 1
 
     mandatory_agent_terms = [
-        "Restore project context first",
+        "Mandatory bootstrap",
+        "Navigate the repository brain",
         "Route the task to existing skills",
-        "Three-engine orchestration",
         "Semantic discovery before edits",
-        "Review and verification before merge",
-        "Persist continuity after meaningful work",
+        "Complete-functionality rule",
+        "GitHub Actions is the automatic authority",
+        "Browser/E2E",
+        "Three-engine orchestration",
+        "Persist continuity",
     ]
     for term in mandatory_agent_terms:
         if term not in agents:
             fail(f"AGENTS.md contract missing: {term}")
             errors += 1
 
+    for term in ("Prompt Mestre", "GRAPH.json", "NEW_FEATURE", "BUG_FIX", "Definition of Done"):
+        if term not in brain_index:
+            fail(f"brain index missing navigation term: {term}")
+            errors += 1
+
     if "TODO" in router or "TBD" in router:
         fail("docs/SKILL_ROUTER.md contains TODO/TBD placeholder")
         errors += 1
+
+    errors += validate_graph()
+    errors += validate_product_contract()
+    errors += validate_ci_contract()
 
     if errors:
         print(f"Engine validation failed with {errors} error(s).")
@@ -199,9 +387,11 @@ def main() -> int:
 
     print(
         "Engine validation passed: "
-        f"{len(links)} pinned gitlinks matched to exact manifest repositories/SHAs, "
-        f"{len(REQUIRED_ROUTER_TERMS)} routed capability groups, "
-        "continuity contract present."
+        f"{len(links)} pinned gitlinks matched manifest SHAs; "
+        f"{len(REQUIRED_ROUTES)} routes, {len(REQUIRED_NODES)} nodes, "
+        f"{len(REQUIRED_SKILLS)} engine cards and {len(REQUIRED_GATES)} gates validated; "
+        "20 master rules and 24 acceptance tests traced; "
+        "lint/build/unit/E2E CI contract present."
     )
     return 0
 

@@ -4,76 +4,75 @@ Last updated: 2026-09-18
 
 ## Current phase
 
-**Óris360° Sales PWA implemented / ready for production hosting connection.**
+**Óris360° Sales PWA implemented against the explicit DEMO gateway; repository brain and stronger CI/E2E gates are being added on `feature/repository-brain-ci-e2e`.**
 
-The application structure, offline domain, demo backend, mobile interface, PWA build and Netlify configuration are implemented. The real Óris360° API is intentionally deferred and plugs into the existing `OrisGateway` abstraction. The seller PWA is now recognized as one product surface; a full company/admin platform expansion is being designed separately on feature/oris360-full-platform.
+The offline domain, mobile interface, PWA build and Netlify configuration exist. The real Óris360° API remains an external integration dependency behind `OrisGateway`. Production hosting has not yet been verified.
 
-## Verified repository baseline
+## Verified repository baseline before this branch
 
-- Default branch target: `main`
-- Product branch: `feature/oris360-sales-pwa`
-- Product PR: #3
-- Eleven pinned upstream repositories remain registered as Git submodules, including ECC under vendor/engines/ecc.
-- Engine-integrity workflow remains active.
-- App CI validates runtime dependency audit, tests, production build and PWA/Netlify artifacts.
-- Runtime-specific tools and permissions must still be re-checked at the start of future sessions.
+- Default branch: `main`.
+- Baseline commit: `aad913e18cae7b727ffb705c589af4c5adf6c8db`.
+- Eleven pinned upstream repositories are registered as Git submodules, including gstack, Superpowers and ECC.
+- Existing app CI checks runtime dependency audit, Vitest, build and PWA/Netlify artifacts.
+- Existing engine-integrity workflow validates pinned engine structure.
+- Runtime-specific tools and permissions must be re-checked in every future session.
 
-## Completed product capabilities
+## Branch work in progress
+
+This branch adds:
+- canonical in-repository copy of the Prompt Mestre;
+- `docs/brain/INDEX.md` + linked graph;
+- route/node/skill navigation;
+- repository Definition of Done;
+- ESLint gate;
+- Playwright Chromium E2E for core user journeys;
+- stronger `validate_engine.py` checks.
+
+These branch changes are not considered verified until their GitHub Actions runs succeed.
+
+## Product capabilities implemented against DEMO
 
 - React/TypeScript/Vite mobile-first PWA.
 - IndexedDB/Dexie offline persistence.
 - Device + user + company data isolation.
 - First-activation online gate and later offline login.
 - Fixed ten-item global menu.
-- Pedidos with TODOS and NÃO ENVIADOS.
-- Offline Quotes/Orders, conversion, repricing, stock policy and duplication.
-- Explicit-only document transmission with idempotency and server confirmation.
+- Offline Quotes/Orders, explicit transmission, idempotency and sent-document lock.
 - Customer creation/editing offline and CPF/CNPJ deduplication.
 - Manual transactional commercial sync.
-- Last-valid-snapshot preservation.
-- Account-blocked offline behavior.
 - Mission execution offline and allowed automatic return.
-- Operational location channel with browser permission/connectivity constraints.
-- Reports/System Online online gates.
-- Help configuration contract.
-- IA no WhatsApp integration placeholder.
-- Demo backend for complete functional validation without the real API.
-- `OrisGateway` contract and `gatewayFactory.ts` integration seam.
-- Acceptance matrix covering the 24 requested criteria.
-- Netlify configuration, CSP/security headers, SPA fallback and PWA service worker.
-- Persistent offline authentication encrypted with PBKDF2 + AES-GCM.
+- Online gates for Reports and Sistema Online.
+- PWA/service worker and Netlify configuration.
 
-## External integration intentionally pending
+## External dependencies still pending
 
-The user will connect the real Óris360° API later.
+The real Óris360° API/SSO/official integration endpoints have not been provided.
 
-Required contracts are documented in:
-
+Required contracts remain documented in:
 - `docs/API_INTEGRATION.md`
 
-This is not treated as a blocker for the completed App structure.
+No real endpoint or credential may be invented.
 
 ## Deployment status
 
-Code/build configuration is ready for Netlify.
-
-Actual Netlify site creation still requires authorization in the user's Netlify account. This ChatGPT runtime currently has no Netlify connector/account session, so no production URL has been created yet.
+Netlify configuration exists, but a production `*.netlify.app` deployment has not been verified from this runtime.
 
 ## Next concrete task
 
-1. Merge PR #3 after final CI evidence.
-2. Import `ugcbyaanacamargo-web/appweb` into Netlify.
-3. Confirm the generated `*.netlify.app` URL.
-4. Smoke-test the hosted PWA.
-5. Later replace `DemoOrisGateway` with the real API adapter.
+1. Push and open PR for `feature/repository-brain-ci-e2e`.
+2. Inspect app-ci, e2e and engine-integrity for the PR head SHA.
+3. Fix any failing gate.
+4. Re-review against the Prompt Mestre and branch plan.
+5. Merge only after required checks are green.
+6. Verify production hosting separately when Netlify access is available.
 
-## Relevant files
+## Relevant entry points
 
-- `src/infrastructure/gatewayFactory.ts`
-- `src/infrastructure/orisGateway.ts`
-- `docs/API_INTEGRATION.md`
-- `docs/ACCEPTANCE_MATRIX.md`
-- `netlify.toml`
 - `AGENTS.md`
+- `docs/brain/INDEX.md`
+- `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 - `docs/SKILL_ROUTER.md`
-- `DECISIONS.md`
+- `docs/ACCEPTANCE_MATRIX.md`
+- `docs/API_INTEGRATION.md`
+- `src/infrastructure/orisGateway.ts`
+- `src/infrastructure/gatewayFactory.ts`
