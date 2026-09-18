@@ -137,11 +137,13 @@ describe('manual commercial synchronization', () => {
     const existing = await db!.contexts.get(scopeKey);
     await db!.contexts.put({ ...existing!, accountBlocked: true });
     const gateway = new SyncGateway(snapshot(99));
+    gateway.snapshotError = new GatewayError('ACCOUNT_BLOCKED', 'blocked');
 
     const result = await synchronizeCommercialBase({ db: db!, gateway, context, online: true });
 
     expect(result).toMatchObject({ ok: false, reason: 'account-blocked' });
     expect(await db!.products.get([scopeKey, 'old-product'])).toBeDefined();
+    expect((await db!.contexts.get(scopeKey))?.lastSuccessfulSyncAt).toBe('2026-09-17T00:00:00Z');
   });
 
   it('allows a previously blocked account to synchronize after the server is regularized', async () => {
