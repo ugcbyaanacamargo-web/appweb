@@ -157,6 +157,8 @@ export function App() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [locationTracking, setLocationTracking] = useState(false);
   const noticeTimer = useRef<number | null>(null);
+  const syncInFlight = useRef(false);
+  const lastLocationSentAt = useRef(0);
 
   const notify = useCallback((message: string, tone: NoticeTone = 'info') => {
     setNotice({ message, tone });
@@ -174,21 +176,25 @@ export function App() {
 
   const refreshMissions = useCallback(async (notifyNew = true) => {
     if (!active || !online) return;
-    const localRows = await db.missions.where('scopeKey').equals(active.scopeKey).toArray();
-    const localById = new Map(localRows.map(mission => [mission.id, mission]));
-    const serverRows = await gateway.fetchMissions(active.gatewayContext);
-    let newCount = 0;
+    try {
+      const localRows = await db.missions.where('scopeKey').equals(active.scopeKey).toArray();
+      const localById = new Map(localRows.map(mission => [mission.id, mission]));
+      const serverRows = await gateway.fetchMissions(active.gatewayContext);
+      let newCount = 0;
 
-    for (const serverMission of serverRows) {
-      const local = localById.get(serverMission.id);
-      if (!local) newCount += 1;
-      if (local?.pendingReturn) continue;
-      await db.missions.put({ ...serverMission, scopeKey: active.scopeKey });
+      for (const serverMission of serverRows) {
+        const local = localById.get(serverMission.id);
+        if (!local) newCount += 1;
+        if (local?.pendingReturn) continue;
+        await db.missions.put({ ...serverMission, scopeKey: active.scopeKey });
+      }
+      if (newCount > 0 && notifyNew && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Óris360°', { body: newCount + ' nova(s) Tarefa(s) / Missão(ões).' });
+      }
+      setRevision(value => value + 1);
+    } catch {
+      // Missões são um canal independente e não podem invalidar a operação comercial.
     }
-    if (newCount > 0 && notifyNew && 'Notification' in window && Notification.permission === 'granted') {
-      new Notification('Óris360°', { body: newCount + ' nova(s) Tarefa(s) / Missão(ões).' });
-    }
-    setRevision(value => value + 1);
   }, [active?.scopeKey, online]);
 
   const activateCompany = useCallback(async (sessionAuth: AuthResult, companyId: string) => {
@@ -253,10 +259,14 @@ export function App() {
     saveLiveSession(sessionStorage, { auth: sessionAuth, activeCompanyId: companyId });
 
     if (readOnline()) {
-      const missions = await gateway.fetchMissions(gatewayContext);
-      for (const mission of missions) {
-        const local = await db.missions.get([scopeKey, mission.id]);
-        if (!local?.pendingReturn) await db.missions.put({ ...mission, scopeKey });
+      try {
+        const missions = await gateway.fetchMissions(gatewayContext);
+        for (const mission of missions) {
+          const local = await db.missions.get([scopeKey, mission.id]);
+          if (!local?.pendingReturn) await db.missions.put({ ...mission, scopeKey });
+        }
+      } catch {
+        // Falha no canal de Missões não impede login nem acesso à base comercial válida.
       }
     }
     setRevision(value => value + 1);
@@ -281,8 +291,12 @@ export function App() {
     if (!active || !online) return;
     let cancelled = false;
     const run = async () => {
-      await flushMissionReturns({ db, gateway, context: active.gatewayContext, online: true });
-      if (!cancelled) await refreshMissions(true);
+      try {
+        await flushMissionReturns({ db, gateway, context: active.gatewayContext, online: true });
+        if (!cancelled) await refreshMissions(true);
+      } catch {
+        // Conectividade instável mantém retornos locais pendentes para a próxima tentativa.
+      }
     };
     run();
     const id = window.setInterval(run, 60_000);
@@ -296,6 +310,9 @@ export function App() {
     if (!active || !online || !locationTracking || !navigator.geolocation) return;
     const watchId = navigator.geolocation.watchPosition(
       position => {
+        const now = Date.now();
+        if (now - lastLocationSentAt.current < 60_000) return;
+        lastLocationSentAt.current = now;
         gateway.sendLocation(active.gatewayContext, {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -353,25 +370,37 @@ export function App() {
       notify('Sem conexão. A última base válida continua disponível.', 'warning');
       return;
     }
-    const result = await synchronizeCommercialBase({
-      db,
-      gateway,
-      context: active.gatewayContext,
-      online
-    });
-    if (result.ok) {
-      notify(
-        result.customerErrors.length
-          ? 'SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO. Uma pendência de cliente foi mantida para nova tentativa.'
-          : 'SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO.',
-        'success'
-      );
-    } else if (result.reason === 'account-blocked') {
-      notify('Conta bloqueada: a base comercial não foi atualizada. Vendas offline e envio explícito de documentos continuam disponíveis.', 'warning');
-    } else {
-      notify('Sincronização não concluída. A última base válida foi preservada.', 'error');
+    if (syncInFlight.current) {
+      notify('Uma sincronização já está em andamento.', 'info');
+      return;
     }
-    await refreshLocal();
+
+    syncInFlight.current = true;
+    try {
+      const result = await synchronizeCommercialBase({
+        db,
+        gateway,
+        context: active.gatewayContext,
+        online
+      });
+      if (result.ok) {
+        notify(
+          result.customerErrors.length
+            ? 'SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO. Uma pendência de cliente foi mantida para nova tentativa.'
+            : 'SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO.',
+          'success'
+        );
+      } else if (result.reason === 'account-blocked') {
+        notify('Conta bloqueada: a base comercial não foi atualizada. Vendas offline e envio explícito de documentos continuam disponíveis.', 'warning');
+      } else {
+        notify('Sincronização não concluída. A última base válida foi preservada.', 'error');
+      }
+      await refreshLocal();
+    } catch {
+      notify('Sincronização não concluída. A última base válida foi preservada.', 'error');
+    } finally {
+      syncInFlight.current = false;
+    }
   }, [active?.scopeKey, online, notify, refreshLocal]);
 
   const newDocument = async () => {
@@ -545,7 +574,15 @@ export function App() {
   return (
     <>
       {content}
-      {notice && <div className={'toast ' + notice.tone}>{notice.message}</div>}
+      {notice && (
+        <div
+          className={'toast ' + notice.tone}
+          role={notice.tone === 'error' ? 'alert' : 'status'}
+          aria-live={notice.tone === 'error' ? 'assertive' : 'polite'}
+        >
+          {notice.message}
+        </div>
+      )}
     </>
   );
 }
