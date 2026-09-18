@@ -39,9 +39,10 @@ export function repriceAndValidateLocal(
     }
 
     const requested = Math.max(0, item.quantity);
-    const quantity = allowSaleWithoutStock
-      ? requested
-      : Math.min(requested, Math.max(0, product.stock));
+    const mustEnforceStock = document.kind === 'order' && !allowSaleWithoutStock;
+    const quantity = mustEnforceStock
+      ? Math.min(requested, Math.max(0, product.stock))
+      : requested;
 
     if (quantity <= 0) {
       return [];
