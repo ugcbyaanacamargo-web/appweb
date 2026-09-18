@@ -26,3 +26,7 @@ export const MAIN_MENU: readonly MenuItem[] = Object.freeze([
   { key: 'sync', label: 'Sincronizar', glyph: '↻' },
   { key: 'logout', label: 'Sair da minha conta', glyph: '⎋' }
 ]);
+
+export function pageRequiresOnline(page: MainPage): boolean {
+  return page === 'reports' || page === 'online';
+}
