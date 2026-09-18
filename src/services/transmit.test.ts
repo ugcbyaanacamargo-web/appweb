@@ -131,6 +131,8 @@ describe('explicit document transmission',()=>{
     await seed('order');
     const row=await db!.contexts.get(scopeKey);
     await db!.contexts.put({...row!,allowSaleWithoutStock:true});
+    const product=await db!.products.get([scopeKey,'p1']);
+    await db!.products.put({...product!,stock:6});
     const gateway=new SendGateway();
     gateway.acceptedQuantity=99;
     await sendDocumentExplicitly({db:db!,gateway,context,documentId:'doc1',online:true});
