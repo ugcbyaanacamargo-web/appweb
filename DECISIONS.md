@@ -74,3 +74,12 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** The user selected Netlify and wants a free `*.netlify.app` domain.
 
 **Consequence:** Keep SPA fallback, PWA artifacts and security headers compatible with Netlify. Actual site creation requires access to the user's Netlify account.
+
+
+## 2026-09-18 — ECC joins gstack and Superpowers as a pinned upstream engine
+
+**Decision:** Pin affaan-m/ECC under vendor/engines/ecc and route only the smallest relevant specialized skills through it.
+
+**Reason:** ECC adds research, API/backend/frontend, security, e2e, memory and verification capabilities without replacing the existing process engines.
+
+**Consequence:** Do not duplicate runtime hooks/plugins just because complete sources are vendored. Superpowers governs lifecycle, gstack governs product/review/QA/release, and ECC supplies specialized capability guidance when relevant.
