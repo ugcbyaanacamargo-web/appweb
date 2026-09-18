@@ -33,3 +33,44 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** This avoids relying on hidden or host-specific memory for facts that must remain auditable.
 
 **Consequence:** Important decisions and current work state are written here/root state files without secrets.
+
+
+## 2026-09-18 — Óris360° Sales App is an offline-first PWA
+
+**Decision:** Implement the sales client as a React/TypeScript/Vite PWA with IndexedDB/Dexie as the operational local database.
+
+**Reason:** The product's primary invariant is continuing sales after a valid first synchronization even when connectivity is unavailable.
+
+**Consequence:** UI code must not treat network availability as a requirement for local sales operations. Online-only areas remain explicitly gated.
+
+## 2026-09-18 — Sales documents never use the general commercial sync channel
+
+**Decision:** Pedido/Orçamento transmission is an explicit user action with a stable idempotency key. The general commercial synchronization service never uploads sales documents.
+
+**Reason:** This is a master business rule and prevents accidental submission when connectivity returns.
+
+**Consequence:** Automatic queues may be used for Mission returns, but never for sales documents.
+
+## 2026-09-18 — Local history belongs to the device context
+
+**Decision:** Central Pedido/Orçamento history is never downloaded into the App. Local document history is scoped by device + user + company.
+
+**Reason:** The product explicitly defines device-local history.
+
+**Consequence:** A new/reinstalled device starts with zero local Pedido/Orçamento history even when the server contains previously submitted documents.
+
+## 2026-09-18 — Real API integration is isolated behind OrisGateway
+
+**Decision:** The complete App is allowed to run against `DemoOrisGateway` until the real Óris360° API is provided. Production integration replaces only the gateway adapter/factory.
+
+**Reason:** The user will connect the API later and no official endpoint/credential was available during implementation.
+
+**Consequence:** Never hardcode guessed endpoints or credentials into product/domain/UI code. Follow `docs/API_INTEGRATION.md`.
+
+## 2026-09-18 — Netlify is the target static/PWA host
+
+**Decision:** Build output is `dist/`, with deployment configuration in `netlify.toml`.
+
+**Reason:** The user selected Netlify and wants a free `*.netlify.app` domain.
+
+**Consequence:** Keep SPA fallback, PWA artifacts and security headers compatible with Netlify. Actual site creation requires access to the user's Netlify account.

@@ -1,0 +1,37 @@
+name: app-ci
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          submodules: false
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+      - name: Install
+        run: npm install --no-audit --no-fund
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Test
+        run: npm run test:run
+      - name: Build
+        run: npm run build
+      - name: Verify PWA and Netlify artifacts
+        run: |
+          test -s dist/manifest.webmanifest
+          test -s dist/sw.js
+          grep -q 'publish = "dist"' netlify.toml
