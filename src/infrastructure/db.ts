@@ -16,6 +16,10 @@ export interface ContextRecord {
   lastSuccessfulSyncAt?: string;
   snapshotVersion?: string;
   accountBlocked: boolean;
+  allowSaleWithoutStock?: boolean;
+  helpPhone?: string;
+  helpEmail?: string;
+  onlineBaseUrl?: string;
 }
 
 export class OrisDb extends Dexie {
@@ -135,7 +139,11 @@ export async function replaceCommercialSnapshot(
         ...context,
         lastSuccessfulSyncAt: snapshot.synchronizedAt,
         snapshotVersion: snapshot.version,
-        accountBlocked: snapshot.settings.accountBlocked
+        accountBlocked: snapshot.settings.accountBlocked,
+        allowSaleWithoutStock: snapshot.settings.allowSaleWithoutStock,
+        helpPhone: snapshot.settings.helpPhone,
+        helpEmail: snapshot.settings.helpEmail,
+        onlineBaseUrl: snapshot.settings.onlineBaseUrl
       });
     }
   );
