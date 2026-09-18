@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import type {
-  AuthResult, CommercialSnapshot, Customer, Mission, SalesDocument, SendDocumentResult
+  AuthResult, CommercialSnapshot, Customer, Mission, SendDocumentResult
 } from '../domain/models';
 import { OrisDb } from '../infrastructure/db';
 import type { AccountInput, GatewayContext, OrisGateway } from '../infrastructure/orisGateway';
