@@ -56,6 +56,7 @@ For new UI, new subsystems, or behavior-changing features:
 - Use Superpowers brainstorming/planning flow.
 - Use gstack design/engineering review workflows when relevant.
 - Use the pinned frontend/API/design skills listed in `docs/SKILL_ROUTER.md`.
+- Use ECC only for the smallest relevant specialized skill set (research, API/backend patterns, frontend patterns, security, e2e, memory, verification); do not bulk-load its catalog.
 - Define interfaces and states before implementation when they affect multiple components.
 - Prefer small modules with explicit boundaries over large multifunction files.
 
@@ -99,6 +100,7 @@ Do not store secrets or unrelated personal data.
 
 - `vendor/engines/gstack` — product, planning, design, engineering review, QA, security, release, context save/restore.
 - `vendor/engines/superpowers` — brainstorming, planning, TDD, debugging, code review, verification, structured execution.
+- `vendor/engines/ecc` — specialized research, API/backend/frontend patterns, security review, e2e testing, memory and verification skills. Prefer its `.agents/skills/` Codex-compatible surface when native ECC is unavailable.
 - `vendor/skills/engineering` — context engineering, UI engineering, API/interface design, debugging, security, performance, review and shipping.
 - `vendor/skills/vercel-agent-skills` — React/Next.js performance and web interface guidelines.
 - `vendor/skills/anthropic` — Agent Skills patterns/specification and specialized examples.
@@ -106,6 +108,16 @@ Do not store secrets or unrelated personal data.
 - `vendor/memory/mem0` — application-level persistent memory infrastructure when the product needs it.
 - `vendor/mcp/reference-servers` — MCP reference implementations; security review required before production adoption.
 - `vendor/app-builder/bolt-diy` and `vendor/app-builder/dyad` — complete AI app-builder references/environments.
+
+## Three-engine orchestration
+
+Use the engines by responsibility, not by stacking every workflow at once:
+
+1. **Superpowers** governs the development lifecycle: brainstorming/approval, plans, TDD, debugging, code review requests and verification.
+2. **gstack** supplies product/design/engineering review, QA, security, documentation and release workflows.
+3. **ECC** supplies narrow specialized skills when they add unique value, especially `deep-research`, `api-design`, `backend-patterns`, `frontend-patterns`, `security-review`, `e2e-testing`, `unified-memory` and `verification-loop`.
+
+Do not install duplicate hook/plugin runtimes on top of one another merely because their source repositories are vendored. The repository pins complete upstream sources; the current host decides what can execute natively.
 
 ## Runtime truth
 

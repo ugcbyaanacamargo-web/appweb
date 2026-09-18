@@ -6,14 +6,14 @@ Last updated: 2026-09-18
 
 **Óris360° Sales PWA implemented / ready for production hosting connection.**
 
-The application structure, offline domain, demo backend, mobile interface, PWA build and Netlify configuration are implemented. The real Óris360° API is intentionally deferred and plugs into the existing `OrisGateway` abstraction.
+The application structure, offline domain, demo backend, mobile interface, PWA build and Netlify configuration are implemented. The real Óris360° API is intentionally deferred and plugs into the existing `OrisGateway` abstraction. The seller PWA is now recognized as one product surface; a full company/admin platform expansion is being designed separately on feature/oris360-full-platform.
 
 ## Verified repository baseline
 
 - Default branch target: `main`
 - Product branch: `feature/oris360-sales-pwa`
 - Product PR: #3
-- Ten pinned upstream repositories remain registered as Git submodules.
+- Eleven pinned upstream repositories remain registered as Git submodules, including ECC under vendor/engines/ecc.
 - Engine-integrity workflow remains active.
 - App CI validates runtime dependency audit, tests, production build and PWA/Netlify artifacts.
 - Runtime-specific tools and permissions must still be re-checked at the start of future sessions.

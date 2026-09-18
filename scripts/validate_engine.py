@@ -24,6 +24,8 @@ REQUIRED_ROUTER_TERMS = [
     "Web visual direction / design system",
     "Build or change UI",
     "Architecture / module boundaries / APIs",
+    "Research / external integration",
+    "Backend / central platform",
     "Semantic context / session setup",
     "Persist continuity",
     "Bug / unexpected behavior",
@@ -177,6 +179,7 @@ def main() -> int:
     mandatory_agent_terms = [
         "Restore project context first",
         "Route the task to existing skills",
+        "Three-engine orchestration",
         "Semantic discovery before edits",
         "Review and verification before merge",
         "Persist continuity after meaningful work",
