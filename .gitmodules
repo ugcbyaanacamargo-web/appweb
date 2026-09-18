@@ -13,6 +13,9 @@
 [submodule "vendor/skills/skills-cli"]
 	path = vendor/skills/skills-cli
 	url = https://github.com/vercel-labs/skills.git
+[submodule "vendor/skills/vercel-agent-skills"]
+	path = vendor/skills/vercel-agent-skills
+	url = https://github.com/vercel-labs/agent-skills.git
 [submodule "vendor/memory/mem0"]
 	path = vendor/memory/mem0
 	url = https://github.com/mem0ai/mem0.git
@@ -22,3 +25,6 @@
 [submodule "vendor/app-builder/bolt-diy"]
 	path = vendor/app-builder/bolt-diy
 	url = https://github.com/stackblitz-labs/bolt.diy.git
+[submodule "vendor/app-builder/dyad"]
+	path = vendor/app-builder/dyad
+	url = https://github.com/dyad-sh/dyad.git

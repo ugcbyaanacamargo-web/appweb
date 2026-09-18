@@ -27,7 +27,7 @@
 - Create gitlinks under: `vendor/**`
 
 **Verification:**
-- Confirm every path in `.gitmodules` has a matching gitlink.
+- Confirm all ten paths in `.gitmodules` have matching gitlinks.
 - Confirm every gitlink SHA equals the manifest.
 
 ### Task 2: Document the engine

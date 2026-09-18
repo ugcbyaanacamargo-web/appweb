@@ -7,11 +7,11 @@ This repository is an integration workspace. Prefer proven upstream projects ove
 ### Source priority
 
 1. Inspect `vendor/engines/gstack` and `vendor/engines/superpowers` for development workflow patterns.
-2. Inspect `vendor/skills/engineering` and `vendor/skills/anthropic` for existing reusable skills before authoring a new one.
+2. Inspect `vendor/skills/engineering`, `vendor/skills/anthropic`, and `vendor/skills/vercel-agent-skills` for existing reusable skills before authoring a new one.
 3. Use `vendor/skills/skills-cli` when a compatible agent runtime can consume Agent Skills.
 4. Use `vendor/memory/mem0` for application-level persistent memory requirements rather than inventing a custom memory layer without evidence.
 5. Use `vendor/mcp/reference-servers` as reference implementations only; perform security review before production adoption.
-6. Use `vendor/app-builder/bolt-diy` as a reference/full application environment for AI-assisted full-stack web generation.
+6. For AI-assisted full-stack web generation, inspect both `vendor/app-builder/bolt-diy` and `vendor/app-builder/dyad`; choose by project/runtime constraints instead of combining their internals blindly.
 
 ### Safety
 
