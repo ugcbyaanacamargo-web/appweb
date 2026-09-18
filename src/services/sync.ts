@@ -32,7 +32,16 @@ export async function synchronizeCommercialBase(input: {
     return { ok: false, customerErrors: [], reason: 'failed' };
   }
   if (localContext.accountBlocked) {
-    return { ok: false, customerErrors: [], reason: 'account-blocked' };
+    try {
+      // Revalidate the server-side account state so a regularized account
+      // is not permanently locked by stale local metadata.
+      await gateway.fetchCommercialSnapshot(context);
+    } catch (error) {
+      if (error instanceof GatewayError && error.code === 'ACCOUNT_BLOCKED') {
+        return { ok: false, customerErrors: [], reason: 'account-blocked' };
+      }
+      return { ok: false, customerErrors: [], reason: 'failed' };
+    }
   }
 
   const customerErrors: Array<{ customerId: string; message: string }> = [];
