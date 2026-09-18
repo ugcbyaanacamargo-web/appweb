@@ -24,7 +24,14 @@ jobs:
           node-version: '22'
       - name: Install
         run: npm install --no-audit --no-fund
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=high
       - name: Test
         run: npm run test:run
       - name: Build
         run: npm run build
+      - name: Verify PWA and Netlify artifacts
+        run: |
+          test -s dist/manifest.webmanifest
+          test -s dist/sw.js
+          grep -q 'publish = "dist"' netlify.toml
