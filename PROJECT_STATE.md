@@ -8,13 +8,13 @@ Last updated: 2026-09-18
 
 The repository is being prepared so future website work can use repository-first skill routing, durable context, and verified development workflow.
 
-## Verified baseline
+## Verified repository baseline
 
 - Default branch: `main`
 - Engine baseline commit before autonomous-runtime work: `b00493b2990cb74613b5cea6038326b027538c8a`
 - Ten pinned upstream repositories are registered as Git submodules.
-- gstack and Superpowers workflows are available in the current ChatGPT environment as installed skills/plugins.
-- GitHub connector access has repository write/admin permissions in this workflow.
+- Repository-level architecture/spec/plan structure exists.
+- Runtime-specific tools and permissions must be re-checked at the start of each future session; they are not persisted here as permanent facts.
 
 ## Completed capabilities
 
@@ -35,7 +35,7 @@ The repository is being prepared so future website work can use repository-first
 
 ## Next concrete task after this phase
 
-Wait for the user's website/product prompt. Then restore this file and `DECISIONS.md`, route the prompt through the relevant design/architecture skills, create an approved spec, and implement the site in an isolated branch.
+Wait for the user's website/product prompt. Then restore this file and `DECISIONS.md`, re-check the runtime tools available in that session, route the prompt through the relevant design/architecture skills, create an approved spec, and implement the site in an isolated branch.
 
 ## Open product decisions
 
