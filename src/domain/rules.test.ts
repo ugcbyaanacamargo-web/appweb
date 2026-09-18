@@ -69,7 +69,7 @@ describe('document rules', () => {
   });
 
   it('R11 caps quantity to local stock and removes zero-stock item when sale without stock is disabled', () => {
-    const input = doc({ items: [
+    const input = doc({ kind: 'order', items: [
       { productId: 'p1', quantity: 10, unitPrice: 10 },
       { productId: 'p3', quantity: 2, unitPrice: 5 }
     ] });
@@ -79,7 +79,12 @@ describe('document rules', () => {
   });
 
   it('R11 keeps requested quantity when sale without stock is enabled', () => {
-    expect(repriceAndValidateLocal(doc(), products, true).items[0].quantity).toBe(10);
+    expect(repriceAndValidateLocal(doc({ kind: 'order' }), products, true).items[0].quantity).toBe(10);
+  });
+
+  it('R12 keeps quote quantities even when stock is lower because quote does not move stock', () => {
+    const quote = repriceAndValidateLocal(doc(), products, false);
+    expect(quote.items).toEqual([{ productId: 'p1', quantity: 10, unitPrice: 12 }]);
   });
 
   it('R7 duplicate always creates a new local quote with current seller/date and empty supplemental fields', () => {
@@ -105,6 +110,6 @@ describe('document rules', () => {
     });
     const copy = duplicateAsQuote(sent, inactiveCustomer, products, false, 'seller-2', now, 'local-2');
     expect(copy.customerId).toBeUndefined();
-    expect(copy.items).toEqual([{ productId: 'p1', quantity: 6, unitPrice: 12 }]);
+    expect(copy.items).toEqual([{ productId: 'p1', quantity: 10, unitPrice: 12 }]);
   });
 });
