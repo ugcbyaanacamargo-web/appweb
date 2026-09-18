@@ -34,6 +34,12 @@ function bytesToHex(bytes: Uint8Array): string {
     .join('');
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.length);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
 function hexToBytes(value: string): Uint8Array {
   if (!value || value.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(value)) {
     throw new Error('INVALID_ENCRYPTED_AUTH');
@@ -55,7 +61,7 @@ async function deriveOfflineKey(
 
   const material = await globalThis.crypto.subtle.importKey(
     'raw',
-    new TextEncoder().encode(normalizeEmail(email) + ':' + password),
+    toArrayBuffer(new TextEncoder().encode(normalizeEmail(email) + ':' + password)),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -65,7 +71,7 @@ async function deriveOfflineKey(
     {
       name: 'PBKDF2',
       hash: 'SHA-256',
-      salt,
+      salt: toArrayBuffer(salt),
       iterations
     },
     material,
@@ -92,9 +98,9 @@ export async function cacheOfflineCredentials(
   const key = await deriveOfflineKey(email, password, salt, PBKDF2_ITERATIONS);
   const plaintext = new TextEncoder().encode(JSON.stringify(auth));
   const encrypted = await globalThis.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: toArrayBuffer(iv) },
     key,
-    plaintext
+    toArrayBuffer(plaintext)
   );
 
   const record: OfflineCredentialRecord = {
@@ -131,9 +137,9 @@ export async function verifyOfflineCredentials(
     const ciphertext = hexToBytes(record.ciphertext);
     const key = await deriveOfflineKey(email, password, salt, record.iterations);
     const decrypted = await globalThis.crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: toArrayBuffer(iv) },
       key,
-      ciphertext
+      toArrayBuffer(ciphertext)
     );
     return JSON.parse(new TextDecoder().decode(decrypted)) as AuthResult;
   } catch {
