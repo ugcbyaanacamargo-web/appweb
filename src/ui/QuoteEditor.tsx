@@ -302,7 +302,7 @@ export function QuoteEditor({ documentId, onBack, onOpenDocument }: QuoteEditorP
         })}
       </div>
 
-      <details className="details-card" disabled={!editable}>
+      <details className="details-card">
         <summary>Campos complementares <span>opcionais</span></summary>
         <div className="form-grid">
           <label className="field">
