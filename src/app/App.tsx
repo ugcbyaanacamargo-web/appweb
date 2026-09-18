@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AuthResult, CompanyRef, Mission, SalesDocument } from '../domain/models';
+import type { AuthResult, CompanyRef, SalesDocument } from '../domain/models';
 import { OrisDb, type ContextRecord } from '../infrastructure/db';
 import { DEMO_CREDENTIALS } from '../infrastructure/demoOrisGateway';
 import { createOrisGateway } from '../infrastructure/gatewayFactory';
