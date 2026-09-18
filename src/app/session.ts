@@ -12,31 +12,71 @@ export interface LiveSession {
 }
 
 interface OfflineCredentialRecord {
-  email: string;
-  verifier: string;
-  auth: AuthResult;
+  version: 2;
+  salt: string;
+  iv: string;
+  ciphertext: string;
+  iterations: number;
   cachedAt: string;
 }
 
 const LIVE_SESSION_KEY = 'oris360.liveSession.v1';
+const OFFLINE_AUTH_VERSION = 2;
+const PBKDF2_ITERATIONS = 210_000;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-async function sha256(value: string): Promise<string> {
-  if (!globalThis.crypto?.subtle) {
-    throw new Error('WEB_CRYPTO_UNAVAILABLE');
-  }
-  const bytes = new TextEncoder().encode(value);
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest))
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
     .map(byte => byte.toString(16).padStart(2, '0'))
     .join('');
 }
 
+function hexToBytes(value: string): Uint8Array {
+  if (!value || value.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(value)) {
+    throw new Error('INVALID_ENCRYPTED_AUTH');
+  }
+  const bytes = new Uint8Array(value.length / 2);
+  for (let index = 0; index < value.length; index += 2) {
+    bytes[index / 2] = Number.parseInt(value.slice(index, index + 2), 16);
+  }
+  return bytes;
+}
+
+async function deriveOfflineKey(
+  email: string,
+  password: string,
+  salt: Uint8Array,
+  iterations: number
+): Promise<CryptoKey> {
+  if (!globalThis.crypto?.subtle) throw new Error('WEB_CRYPTO_UNAVAILABLE');
+
+  const material = await globalThis.crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(normalizeEmail(email) + ':' + password),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+
+  return globalThis.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      hash: 'SHA-256',
+      salt,
+      iterations
+    },
+    material,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
 function offlineKey(email: string): string {
-  return 'oris360.offlineAuth.v1:' + encodeURIComponent(normalizeEmail(email));
+  return 'oris360.offlineAuth.v2:' + encodeURIComponent(normalizeEmail(email));
 }
 
 export async function cacheOfflineCredentials(
@@ -45,14 +85,27 @@ export async function cacheOfflineCredentials(
   password: string,
   auth: AuthResult
 ): Promise<void> {
-  const normalized = normalizeEmail(email);
+  if (!globalThis.crypto?.subtle) throw new Error('WEB_CRYPTO_UNAVAILABLE');
+
+  const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveOfflineKey(email, password, salt, PBKDF2_ITERATIONS);
+  const plaintext = new TextEncoder().encode(JSON.stringify(auth));
+  const encrypted = await globalThis.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    plaintext
+  );
+
   const record: OfflineCredentialRecord = {
-    email: normalized,
-    verifier: await sha256(normalized + ':' + password),
-    auth,
+    version: OFFLINE_AUTH_VERSION,
+    salt: bytesToHex(salt),
+    iv: bytesToHex(iv),
+    ciphertext: bytesToHex(new Uint8Array(encrypted)),
+    iterations: PBKDF2_ITERATIONS,
     cachedAt: new Date().toISOString()
   };
-  storage.setItem(offlineKey(normalized), JSON.stringify(record));
+  storage.setItem(offlineKey(email), JSON.stringify(record));
 }
 
 export async function verifyOfflineCredentials(
@@ -60,14 +113,29 @@ export async function verifyOfflineCredentials(
   email: string,
   password: string
 ): Promise<AuthResult | null> {
-  const normalized = normalizeEmail(email);
-  const raw = storage.getItem(offlineKey(normalized));
-  if (!raw) return null;
+  const raw = storage.getItem(offlineKey(email));
+  if (!raw || !globalThis.crypto?.subtle) return null;
 
   try {
     const record = JSON.parse(raw) as OfflineCredentialRecord;
-    const verifier = await sha256(normalized + ':' + password);
-    return verifier === record.verifier ? record.auth : null;
+    if (
+      record.version !== OFFLINE_AUTH_VERSION ||
+      !Number.isInteger(record.iterations) ||
+      record.iterations < 100_000
+    ) {
+      return null;
+    }
+
+    const salt = hexToBytes(record.salt);
+    const iv = hexToBytes(record.iv);
+    const ciphertext = hexToBytes(record.ciphertext);
+    const key = await deriveOfflineKey(email, password, salt, record.iterations);
+    const decrypted = await globalThis.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    return JSON.parse(new TextDecoder().decode(decrypted)) as AuthResult;
   } catch {
     return null;
   }
