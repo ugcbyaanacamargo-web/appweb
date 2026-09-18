@@ -48,8 +48,17 @@
 
 ### Task 4: Delivery verification
 
-- [ ] Open PR from `feature/repository-brain-ci-e2e`.
-- [ ] Inspect all workflow jobs for the PR head SHA.
-- [ ] Fix any failure and re-run.
-- [ ] Review diff against this plan and the master specification.
-- [ ] Merge only after mandatory checks succeed.
+- [x] Open PR #6 from `feature/repository-brain-ci-e2e`.
+- [x] Inspect all workflow jobs for the verified PR head `48ccad3c7a14f19359c7726f4ecc7c5c3c96b8b8`.
+- [x] Fix lint and Vitest/Playwright discovery failures and re-run.
+- [x] Review final diff against this plan and the master specification.
+- [x] Confirm `Engine integrity`, `app-ci` and `e2e` succeeded on the same head SHA.
+- [x] Merge PR #6 using expected head SHA protection.
+
+## Verification evidence
+
+- `Engine integrity` run #58: success.
+- `app-ci` run #94: success.
+- `e2e` run #7: success.
+- Playwright exercises 3 browser journeys: fixed menu, quote/customer/product gating + reload persistence, and explicit send lock + duplication.
+- Merge commit: `83f4fb916149a09d8c35d30baa586a5234cd661c`.
