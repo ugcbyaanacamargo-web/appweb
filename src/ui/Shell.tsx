@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { MAIN_MENU, type MainPage } from './menu';
 
 interface ShellProps {
@@ -42,6 +42,15 @@ export function Shell(props: ShellProps) {
     children
   } = props;
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [menuOpen, setMenuOpen]);
+
   const handleItem = (key: (typeof MAIN_MENU)[number]['key']) => {
     if (key === 'sync') {
       setMenuOpen(false);
@@ -81,7 +90,7 @@ export function Shell(props: ShellProps) {
             aria-label="Fechar menu"
             onClick={() => setMenuOpen(false)}
           />
-          <aside className="drawer" aria-label="Menu principal">
+          <aside className="drawer" role="dialog" aria-modal="true" aria-label="Menu principal">
             <div className="drawer-brand">
               <div className="brand-mark">Ó</div>
               <div>
