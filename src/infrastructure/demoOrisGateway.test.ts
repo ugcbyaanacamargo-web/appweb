@@ -51,6 +51,32 @@ describe('DemoOrisGateway',()=>{
     expect(after.customers.filter(c=>c.taxId.replace(/\D/g,'')===existing.taxId.replace(/\D/g,''))).toHaveLength(1);
   });
 
+  it('keeps the newest customer version when offline and server edits conflict',async()=>{
+    const auth=await login();
+    const companyId=auth.companies[0].id;
+    const context:GatewayContext={companyId,userId:auth.user.id,scopeKey:'d:u:'+companyId};
+    const snap=await gateway.fetchCommercialSnapshot(context);
+    const existing=snap.customers[0];
+
+    const older=await gateway.upsertCustomer(context,{
+      ...existing,
+      id:'local-old',
+      name:'Versão antiga offline',
+      pendingSync:true,
+      updatedAt:'2000-01-01T00:00:00.000Z'
+    });
+    expect(older.name).toBe(existing.name);
+
+    const newer=await gateway.upsertCustomer(context,{
+      ...existing,
+      id:'local-newer',
+      name:'Versão mais recente offline',
+      pendingSync:true,
+      updatedAt:'2999-01-01T00:00:00.000Z'
+    });
+    expect(newer.name).toBe('Versão mais recente offline');
+  });
+
   it('R19 returns the same official result for the same idempotency key',async()=>{
     const auth=await login();
     const companyId=auth.companies[0].id;
