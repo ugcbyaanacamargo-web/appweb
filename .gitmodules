@@ -1,0 +1,24 @@
+[submodule "vendor/engines/gstack"]
+	path = vendor/engines/gstack
+	url = https://github.com/garrytan/gstack.git
+[submodule "vendor/engines/superpowers"]
+	path = vendor/engines/superpowers
+	url = https://github.com/obra/superpowers.git
+[submodule "vendor/skills/anthropic"]
+	path = vendor/skills/anthropic
+	url = https://github.com/anthropics/skills.git
+[submodule "vendor/skills/engineering"]
+	path = vendor/skills/engineering
+	url = https://github.com/addyosmani/agent-skills.git
+[submodule "vendor/skills/skills-cli"]
+	path = vendor/skills/skills-cli
+	url = https://github.com/vercel-labs/skills.git
+[submodule "vendor/memory/mem0"]
+	path = vendor/memory/mem0
+	url = https://github.com/mem0ai/mem0.git
+[submodule "vendor/mcp/reference-servers"]
+	path = vendor/mcp/reference-servers
+	url = https://github.com/modelcontextprotocol/servers.git
+[submodule "vendor/app-builder/bolt-diy"]
+	path = vendor/app-builder/bolt-diy
+	url = https://github.com/stackblitz-labs/bolt.diy.git
