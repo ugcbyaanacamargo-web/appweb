@@ -284,11 +284,20 @@ export class DemoOrisGateway implements OrisGateway {
     const existing = company.customers.find(item => normalizeTaxId(item.taxId) === taxId);
     const updatedAt = nowIso();
     if (existing) {
-      existing.name = customer.name;
-      existing.taxId = customer.taxId;
-      existing.active = existing.active;
-      existing.updatedAt = updatedAt;
-      this.write(state);
+      const localTimestamp = Date.parse(customer.updatedAt);
+      const serverTimestamp = Date.parse(existing.updatedAt);
+      const localIsNewer =
+        Number.isFinite(localTimestamp) &&
+        (!Number.isFinite(serverTimestamp) || localTimestamp > serverTimestamp);
+
+      if (localIsNewer) {
+        existing.name = customer.name;
+        existing.taxId = customer.taxId;
+        // Active/inactive status is controlled only by the Sistema Online.
+        existing.updatedAt = customer.updatedAt;
+        this.write(state);
+      }
+
       return {
         ...customer,
         id: existing.id,
@@ -298,7 +307,7 @@ export class DemoOrisGateway implements OrisGateway {
         taxId: existing.taxId,
         active: existing.active,
         pendingSync: false,
-        updatedAt
+        updatedAt: existing.updatedAt
       };
     }
 
