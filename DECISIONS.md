@@ -146,3 +146,11 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 
 **Consequence:** The commercial snapshot may supply only the public VAPID key. Production push remains dependent on server-side delivery.
 
+## 2026-09-19 — Production deploys require a Netlify smoke gate
+
+**Decision:** Keep `.github/workflows/production-smoke.yml` as a permanent post-push verification against `https://oris360-site.netlify.app/`.
+
+**Reason:** A green build does not prove that the public production URL actually received the new bundle.
+
+**Consequence:** Every push to `main` polls the public Netlify site and verifies a marker from the expected production build before deployment is treated as verified.
+
