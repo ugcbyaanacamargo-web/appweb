@@ -24,9 +24,11 @@ import { Products } from '../ui/Products';
 import { Missions } from '../ui/Missions';
 import { Help, OnlineSystem, Reports, WhatsappAI } from '../ui/OnlinePages';
 import { QuoteEditor } from '../ui/QuoteEditor';
+import { IntegrationSetup } from '../ui/IntegrationSetup';
+import { ForgotPassword } from '../ui/ForgotPassword';
 import type { MainPage } from '../ui/menu';
 
-type Stage = 'landing' | 'login' | 'register' | 'companies' | 'app';
+type Stage = 'landing' | 'login' | 'register' | 'forgot' | 'integration' | 'companies' | 'app';
 
 interface ActiveRuntime {
   auth: AuthResult;
@@ -70,7 +72,7 @@ function AuthCard({
   online: boolean;
   onBack: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
-  onForgot: () => void;
+  onForgot: (email: string) => void;
 }) {
   const [email, setEmail] = useState(mode === 'login' ? DEMO_CREDENTIALS.email : '');
   const [password, setPassword] = useState(mode === 'login' ? DEMO_CREDENTIALS.password : '');
@@ -127,7 +129,7 @@ function AuthCard({
           {busy ? 'PROCESSANDO…' : mode === 'login' ? 'ENTRAR' : 'CRIAR UMA CONTA'}
         </button>
         <button className="button secondary" onClick={onBack}>VOLTAR</button>
-        {mode === 'login' && <button className="text-button centered" onClick={onForgot}>Esqueci a senha</button>}
+        {mode === 'login' && <button className="text-button centered" onClick={() => onForgot(email)}>Esqueci a senha</button>}
 
         <p className="privacy-note">
           Dados comerciais necessários ficam armazenados localmente neste aparelho para permitir a operação offline.
@@ -156,6 +158,7 @@ export function App() {
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [locationTracking, setLocationTracking] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const noticeTimer = useRef<number | null>(null);
   const syncInFlight = useRef(false);
   const lastLocationSentAt = useRef(0);
@@ -450,6 +453,18 @@ export function App() {
     saveLiveSession(sessionStorage, { auth });
   };
 
+  const integrationSaved = (message: string) => {
+    clearLiveSession(sessionStorage);
+    setActive(null);
+    setAuth(null);
+    setPage('orders');
+    setDocumentId(null);
+    setMenuOpen(false);
+    setLocationTracking(false);
+    setStage('landing');
+    notify(message + ' Faça login novamente para iniciar uma sessão compatível com a integração selecionada.', 'success');
+  };
+
   const runtimeValue = useMemo(() => active ? {
     db,
     gateway,
@@ -499,6 +514,7 @@ export function App() {
           <div className="landing-actions">
             <button className="button primary" onClick={() => setStage('register')}>CRIAR UMA CONTA</button>
             <button className="button light" onClick={() => setStage('login')}>JÁ TENHO CONTA</button>
+            <button className="landing-config-button" onClick={() => setStage('integration')}>CONFIGURAR INTEGRAÇÃO</button>
           </div>
           <span className={online ? 'network online invertible' : 'network offline invertible'}>
             {online ? 'Conectado' : 'Sem internet'}
@@ -507,9 +523,13 @@ export function App() {
       </div>
     );
   } else if (stage === 'login') {
-    content = <AuthCard mode="login" online={online} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={() => notify('Recuperação de senha será conectada à API oficial Óris360°.', 'info')} />;
+    content = <AuthCard mode="login" online={online} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={email => { setRecoveryEmail(email); setStage('forgot'); }} />;
   } else if (stage === 'register') {
     content = <AuthCard mode="register" online={online} onBack={() => setStage('landing')} onSubmit={handleRegister} onForgot={() => undefined} />;
+  } else if (stage === 'forgot') {
+    content = <ForgotPassword gateway={gateway} initialEmail={recoveryEmail} onBack={() => setStage('login')} />;
+  } else if (stage === 'integration') {
+    content = <IntegrationSetup onBack={() => setStage(active ? 'app' : 'landing')} onSaved={integrationSaved} />;
   } else if (stage === 'companies' && auth) {
     content = (
       <div className="auth-screen">
@@ -542,9 +562,9 @@ export function App() {
       page === 'customers' ? <Customers /> :
       page === 'products' ? <Products /> :
       page === 'missions' ? <Missions /> :
-      page === 'whatsapp' ? <WhatsappAI /> :
+      page === 'whatsapp' ? <WhatsappAI onConfigureIntegration={() => setStage('integration')} /> :
       page === 'reports' ? <Reports /> :
-      page === 'online' ? <OnlineSystem /> :
+      page === 'online' ? <OnlineSystem onConfigureIntegration={() => setStage('integration')} /> :
       page === 'help' ? <Help /> :
       documentId ? <QuoteEditor documentId={documentId} onBack={() => { setPage('orders'); setDocumentId(null); }} onOpenDocument={openDocument} /> :
       <Orders onNew={newDocument} onOpen={openDocument} />;
