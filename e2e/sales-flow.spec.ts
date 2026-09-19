@@ -140,6 +140,11 @@ test('configuração técnica valida a API antes de ativar o modo real', async (
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('oris360.integration.v1') || '{}'));
   expect(saved.mode).toBe('http');
   expect(saved.baseUrl).toBe('https://api.example.test');
+  await expect(page.getByText('API real configurada')).toBeVisible();
+
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await expect(page.getByText('MODO DEMONSTRAÇÃO')).toHaveCount(0);
+  await expect(page.getByLabel('E-mail')).toHaveValue('');
 });
 
 test('recuperação de senha executa o gateway em vez de exibir placeholder', async ({ page }) => {
@@ -169,4 +174,34 @@ test('relatórios, sistema online e WhatsApp consultam o gateway', async ({ page
   await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'IA no WhatsApp', exact: true }).click();
   await expect(page.getByText('Integração pendente')).toBeVisible();
   await expect(page.getByRole('button', { name: 'CONFIGURAR API' })).toBeVisible();
+});
+
+
+test('campos de cliente definidos pelo backend funcionam offline e persistem', async ({ page }) => {
+  await enterDemoCompany(page);
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await menu.getByRole('button', { name: 'Clientes', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Novo cliente' }).click();
+  await expect(page.getByLabel('Telefone')).toBeVisible();
+  await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Endereço')).toBeVisible();
+
+  await page.getByLabel('Nome').fill('Cliente Campos Dinâmicos');
+  await page.getByLabel('CPF/CNPJ').fill('12345678909');
+  await page.getByLabel('Telefone').fill('62988887777');
+  await page.getByLabel('E-mail', { exact: true }).fill('cliente@example.com');
+  await page.getByLabel('Endereço').fill('Rua de teste, 100');
+  await page.getByRole('button', { name: 'SALVAR CLIENTE' }).click();
+  await expect(page.getByText('Cliente salvo neste aparelho.')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Menu principal' })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Clientes', exact: true }).click();
+  await page.getByLabel('Buscar cliente').fill('Cliente Campos Dinâmicos');
+  await page.getByText('Cliente Campos Dinâmicos', { exact: true }).click();
+
+  await expect(page.getByLabel('Telefone')).toHaveValue('62988887777');
+  await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue('cliente@example.com');
+  await expect(page.getByLabel('Endereço')).toHaveValue('Rua de teste, 100');
 });
