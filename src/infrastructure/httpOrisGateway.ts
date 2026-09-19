@@ -106,7 +106,7 @@ function parseAuthResult(value: unknown): AuthResult {
   };
 }
 
-function parseCustomer(value: unknown, indexLabel = 'customer'): Customer {
+function parseCustomer(value: unknown, indexLabel = 'customer', scopeKey?: string): Customer {
   const row = recordOrInvalid(value, indexLabel);
   const extraFieldsValue = row.extraFields;
   let extraFields: Record<string, string> | undefined;
@@ -123,21 +123,21 @@ function parseCustomer(value: unknown, indexLabel = 'customer'): Customer {
   return {
     id: requiredString(row.id, indexLabel + '.id'),
     officialId: optionalString(row.officialId, indexLabel + '.officialId'),
-    scopeKey: requiredString(row.scopeKey, indexLabel + '.scopeKey'),
+    scopeKey: scopeKey ?? requiredString(row.scopeKey, indexLabel + '.scopeKey'),
     name: requiredString(row.name, indexLabel + '.name'),
     taxId: requiredString(row.taxId, indexLabel + '.taxId'),
     extraFields,
     active: requiredBoolean(row.active, indexLabel + '.active'),
-    pendingSync: requiredBoolean(row.pendingSync, indexLabel + '.pendingSync'),
+    pendingSync: scopeKey ? false : requiredBoolean(row.pendingSync, indexLabel + '.pendingSync'),
     updatedAt: requiredString(row.updatedAt, indexLabel + '.updatedAt')
   };
 }
 
-function parseProduct(value: unknown, indexLabel = 'product'): Product {
+function parseProduct(value: unknown, indexLabel = 'product', scopeKey?: string): Product {
   const row = recordOrInvalid(value, indexLabel);
   return {
     id: requiredString(row.id, indexLabel + '.id'),
-    scopeKey: requiredString(row.scopeKey, indexLabel + '.scopeKey'),
+    scopeKey: scopeKey ?? requiredString(row.scopeKey, indexLabel + '.scopeKey'),
     name: requiredString(row.name, indexLabel + '.name'),
     sku: requiredString(row.sku, indexLabel + '.sku'),
     active: requiredBoolean(row.active, indexLabel + '.active'),
@@ -147,7 +147,7 @@ function parseProduct(value: unknown, indexLabel = 'product'): Product {
   };
 }
 
-function parseCommercialSnapshot(value: unknown): CommercialSnapshot {
+function parseCommercialSnapshot(value: unknown, scopeKey: string): CommercialSnapshot {
   const row = recordOrInvalid(value, 'commercialSnapshot');
   const settings = recordOrInvalid(row.settings, 'commercialSnapshot.settings');
 
@@ -155,9 +155,9 @@ function parseCommercialSnapshot(value: unknown): CommercialSnapshot {
     version: requiredString(row.version, 'commercialSnapshot.version'),
     synchronizedAt: requiredString(row.synchronizedAt, 'commercialSnapshot.synchronizedAt'),
     customers: arrayOrInvalid(row.customers, 'commercialSnapshot.customers')
-      .map((customer, index) => parseCustomer(customer, 'commercialSnapshot.customers[' + index + ']')),
+      .map((customer, index) => parseCustomer(customer, 'commercialSnapshot.customers[' + index + ']', scopeKey)),
     products: arrayOrInvalid(row.products, 'commercialSnapshot.products')
-      .map((product, index) => parseProduct(product, 'commercialSnapshot.products[' + index + ']')),
+      .map((product, index) => parseProduct(product, 'commercialSnapshot.products[' + index + ']', scopeKey)),
     settings: {
       allowSaleWithoutStock: requiredBoolean(
         settings.allowSaleWithoutStock,
@@ -215,7 +215,7 @@ function parseSendDocumentResult(value: unknown): SendDocumentResult {
   };
 }
 
-function parseMission(value: unknown, label: string): Mission {
+function parseMission(value: unknown, label: string, scopeKey?: string): Mission {
   const row = recordOrInvalid(value, label);
   const evidence = row.evidence == null
     ? undefined
@@ -224,11 +224,11 @@ function parseMission(value: unknown, label: string): Mission {
       );
   return {
     id: requiredString(row.id, label + '.id'),
-    scopeKey: requiredString(row.scopeKey, label + '.scopeKey'),
+    scopeKey: scopeKey ?? requiredString(row.scopeKey, label + '.scopeKey'),
     title: requiredString(row.title, label + '.title'),
     description: optionalString(row.description, label + '.description'),
     completed: requiredBoolean(row.completed, label + '.completed'),
-    pendingReturn: requiredBoolean(row.pendingReturn, label + '.pendingReturn'),
+    pendingReturn: scopeKey ? false : requiredBoolean(row.pendingReturn, label + '.pendingReturn'),
     notes: optionalString(row.notes, label + '.notes'),
     evidence,
     latitude: row.latitude == null ? undefined : requiredNumber(row.latitude, label + '.latitude'),
@@ -238,9 +238,9 @@ function parseMission(value: unknown, label: string): Mission {
   };
 }
 
-function parseMissions(value: unknown): Mission[] {
+function parseMissions(value: unknown, scopeKey: string): Mission[] {
   return arrayOrInvalid(value, 'missions').map((mission, index) =>
-    parseMission(mission, 'missions[' + index + ']')
+    parseMission(mission, 'missions[' + index + ']', scopeKey)
   );
 }
 
@@ -377,14 +377,21 @@ export class HttpOrisGateway implements OrisGateway {
   }
 
   async fetchCommercialSnapshot(context: GatewayContext): Promise<CommercialSnapshot> {
-    return parseCommercialSnapshot(await this.request('commercialSnapshot', { method: 'GET' }, context));
+    return parseCommercialSnapshot(
+      await this.request('commercialSnapshot', { method: 'GET' }, context),
+      context.scopeKey
+    );
   }
 
   async upsertCustomer(context: GatewayContext, customer: Customer): Promise<Customer> {
-    return parseCustomer(await this.request('upsertCustomer', {
-      method: 'POST',
-      body: JSON.stringify({ customer })
-    }, context));
+    return parseCustomer(
+      await this.request('upsertCustomer', {
+        method: 'POST',
+        body: JSON.stringify({ customer })
+      }, context),
+      'customer',
+      context.scopeKey
+    );
   }
 
   async sendDocument(context: GatewayContext, document: SalesDocument): Promise<SendDocumentResult> {
@@ -395,7 +402,10 @@ export class HttpOrisGateway implements OrisGateway {
   }
 
   async fetchMissions(context: GatewayContext): Promise<Mission[]> {
-    return parseMissions(await this.request('missions', { method: 'GET' }, context));
+    return parseMissions(
+      await this.request('missions', { method: 'GET' }, context),
+      context.scopeKey
+    );
   }
 
   async sendMissionReturn(context: GatewayContext, mission: Mission): Promise<void> {
