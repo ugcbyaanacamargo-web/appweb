@@ -151,3 +151,26 @@ A permanent `.github/workflows/production-smoke.yml` now checks the production N
 - `src/infrastructure/integrationConfig.ts`
 - `src/infrastructure/gatewayFactory.ts`
 - `src/app/App.tsx`
+
+
+## Integration target discovered — 2026-09-19
+
+The user identified https://saboriza-catalogo.vercel.app/ as the Sistema Online/backend ecosystem that Óris360° must integrate with.
+
+Read-only inspection confirmed a matching public source repository:
+- Ruanzinn01/Saboriza-Catalogo
+- confirmed by its index.html declaring the same public Vercel URL.
+
+Important architecture facts:
+- Vercel hosts the Saboriza frontend.
+- Saboriza data/auth use Supabase.
+- Existing central resources include products, categories, customers, suppliers, orders/order_items, coupons, settings and IBGE cities.
+- Existing database RPCs include create_order and update_order_items.
+- The published schema does not yet expose seller, customer-portfolio assignment, missions, commissions, team location, push subscription or Óris-specific idempotency/stock structures.
+
+Direction:
+- do not duplicate Saboriza admin features in appweb;
+- Óris360° is the seller/offline client;
+- Saboriza remains the company/admin System Online;
+- integrate through a Saboriza/Supabase gateway and server-side RPC/API for sensitive rules;
+- real integration requires authorized Supabase project URL + publishable key and access to add/review migrations/RLS/RPCs.
