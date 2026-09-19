@@ -3,6 +3,7 @@ import type { Mission } from '../domain/models';
 import { getScopeMissions } from '../infrastructure/db';
 import { completeMissionOffline } from '../services/missions';
 import { useRuntime } from '../app/AppContext';
+import { subscribeMissionPush } from '../infrastructure/push';
 
 async function filesToDataUrls(files: FileList | null): Promise<string[]> {
   if (!files) return [];
@@ -90,10 +91,32 @@ export function Missions() {
       return;
     }
     const permission = await Notification.requestPermission();
-    runtime.notify(
-      permission === 'granted' ? 'Notificações de novas missões ativadas.' : 'Permissão de notificação não concedida.',
-      permission === 'granted' ? 'success' : 'warning'
-    );
+    if (permission !== 'granted') {
+      runtime.notify('Permissão de notificação não concedida.', 'warning');
+      return;
+    }
+
+    const publicKey = runtime.context.missionPushPublicKey;
+    if (!publicKey) {
+      runtime.notify(
+        'Notificações enquanto o App está aberto estão ativadas. Push em segundo plano depende da chave pública VAPID fornecida pelo backend Óris360°.',
+        'warning'
+      );
+      return;
+    }
+
+    try {
+      const subscription = await subscribeMissionPush(publicKey);
+      await runtime.gateway.registerMissionPushSubscription(runtime.gatewayContext, subscription);
+      runtime.notify('Push de novas Missões ativado para este aparelho.', 'success');
+    } catch (error) {
+      runtime.notify(
+        error instanceof Error && error.message === 'PUSH_NOT_SUPPORTED'
+          ? 'Este navegador não oferece Web Push compatível.'
+          : 'Não foi possível registrar o push de Missões. Verifique a integração da API.',
+        'warning'
+      );
+    }
   };
 
   return (
