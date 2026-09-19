@@ -4,10 +4,14 @@ import type {
   CompanyRef,
   Customer,
   Mission,
+  OnlineSessionResult,
   Product,
+  PushSubscriptionPayload,
   SalesDocument,
+  SellerReport,
   SendDocumentResult,
-  UserIdentity
+  UserIdentity,
+  WhatsappIntegrationStatus
 } from '../domain/models';
 import {
   GatewayError,
@@ -28,6 +32,7 @@ interface DemoAccount {
   user: UserIdentity;
   companyIds: string[];
   trialEndsAt?: string;
+  commissionPercent: number;
 }
 
 interface ServerCustomer {
@@ -148,7 +153,8 @@ export class DemoOrisGateway implements OrisGateway {
         email: DEMO_CREDENTIALS.email,
         passwordHash: await hash(DEMO_CREDENTIALS.email + ':' + DEMO_CREDENTIALS.password),
         user,
-        companyIds: ['demo-company-a', 'demo-company-b']
+        companyIds: ['demo-company-a', 'demo-company-b'],
+        commissionPercent: 5
       }],
       companies: [
         {
@@ -251,7 +257,8 @@ export class DemoOrisGateway implements OrisGateway {
       passwordHash: await hash(email + ':' + input.password),
       user,
       companyIds: [companyId],
-      trialEndsAt: plusDaysIso(7)
+      trialEndsAt: plusDaysIso(7),
+      commissionPercent: 0
     });
     state.companies.push({
       id: companyId,
@@ -273,6 +280,10 @@ export class DemoOrisGateway implements OrisGateway {
       companies: [{ id: companyId, name: 'Minha empresa Óris360°' }],
       token: 'demo-session:' + userId
     };
+  }
+
+  async requestPasswordReset(_input: { email: string }): Promise<void> {
+    // DEMO intentionally returns a generic success to model an anti-enumeration reset flow.
   }
 
   async upsertCustomer(context: GatewayContext, customer: Customer): Promise<Customer> {
@@ -444,6 +455,53 @@ export class DemoOrisGateway implements OrisGateway {
     company.locations.push({ userId: context.userId, ...position });
     company.locations = company.locations.slice(-100);
     this.write(state);
+  }
+
+  async fetchSellerReport(context: GatewayContext): Promise<SellerReport> {
+    const state = await this.state();
+    const company = this.company(state, context.companyId);
+    const account = state.accounts.find(item => item.user.id === context.userId);
+    const sellerDocuments = company.centralDocuments.filter(item => item.sellerId === context.userId);
+    const orders = sellerDocuments.filter(item => item.kind === 'order');
+    const quotes = sellerDocuments.filter(item => item.kind === 'quote');
+    const grossSales = orders.reduce(
+      (sum, document) => sum + document.items.reduce(
+        (documentSum, item) => documentSum + item.quantity * item.unitPrice,
+        0
+      ),
+      0
+    );
+    const commissionPercent = account?.commissionPercent ?? 0;
+    return {
+      periodLabel: 'Dados do ambiente DEMO',
+      ordersCount: orders.length,
+      quotesCount: quotes.length,
+      grossSales,
+      commissionPercent,
+      commissionValue: grossSales * commissionPercent / 100
+    };
+  }
+
+  async createOnlineSession(_context: GatewayContext): Promise<OnlineSessionResult> {
+    return {
+      available: false,
+      message: 'O ambiente DEMO não possui uma plataforma web externa para abrir.'
+    };
+  }
+
+  async fetchWhatsappIntegrationStatus(_context: GatewayContext): Promise<WhatsappIntegrationStatus> {
+    return {
+      available: false,
+      connected: false,
+      message: 'A integração WhatsApp/IA exige o backend real Óris360°.'
+    };
+  }
+
+  async registerMissionPushSubscription(
+    _context: GatewayContext,
+    _subscription: PushSubscriptionPayload
+  ): Promise<void> {
+    // No server-side push channel exists in DEMO mode.
   }
 
   async setCompanyBlockedForDemo(companyId: string, blocked: boolean): Promise<void> {
