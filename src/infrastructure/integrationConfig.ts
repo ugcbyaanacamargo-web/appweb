@@ -136,6 +136,13 @@ export function saveIntegrationConfig(storage: IntegrationStorage, config: Integ
   storage.setItem(STORAGE_KEY, JSON.stringify(config));
 }
 
+
+export function integrationRealm(config: IntegrationConfig): string {
+  if (config.mode === 'demo') return 'demo';
+  const base = config.baseUrl.trim().replace(/\/+$/, '').toLowerCase();
+  return 'http:' + base + '|' + config.endpoints.authenticate.trim() + '|' + config.endpoints.commercialSnapshot.trim();
+}
+
 export function integrationStorage(): IntegrationStorage | undefined {
   try {
     return typeof localStorage === 'undefined' ? undefined : localStorage;
