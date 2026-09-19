@@ -49,4 +49,11 @@ describe('offline authentication cache',()=>{
     expect(loadLiveSession(storage)).toBeNull();
     expect((await verifyOfflineCredentials(storage,'vendedor@demo.local','secret'))?.user.id).toBe('u1');
   });
+  it('isolates cached offline credentials between DEMO and real API realms', async () => {
+    const storage = new MemoryStorage();
+    await cacheOfflineCredentials(storage, 'vendedor@demo.local', 'secret', auth, 'demo');
+    expect(await verifyOfflineCredentials(storage, 'vendedor@demo.local', 'secret', 'https://api.example.com')).toBeNull();
+    expect((await verifyOfflineCredentials(storage, 'vendedor@demo.local', 'secret', 'demo'))?.user.id).toBe('u1');
+  });
+
 });
