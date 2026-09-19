@@ -26,6 +26,7 @@ import { Missions } from '../ui/Missions';
 import { Help, OnlineSystem, Reports, WhatsappAI } from '../ui/OnlinePages';
 import { QuoteEditor } from '../ui/QuoteEditor';
 import { IntegrationSetup } from '../ui/IntegrationSetup';
+import { integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
 import { ForgotPassword } from '../ui/ForgotPassword';
 import type { MainPage } from '../ui/menu';
 
@@ -67,16 +68,18 @@ function AuthCard({
   online,
   onBack,
   onSubmit,
-  onForgot
+  onForgot,
+  demoMode
 }: {
   mode: 'login' | 'register';
   online: boolean;
   onBack: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
   onForgot: (email: string) => void;
+  demoMode: boolean;
 }) {
-  const [email, setEmail] = useState(mode === 'login' ? DEMO_CREDENTIALS.email : '');
-  const [password, setPassword] = useState(mode === 'login' ? DEMO_CREDENTIALS.password : '');
+  const [email, setEmail] = useState(mode === 'login' && demoMode ? DEMO_CREDENTIALS.email : '');
+  const [password, setPassword] = useState(mode === 'login' && demoMode ? DEMO_CREDENTIALS.password : '');
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -136,7 +139,7 @@ function AuthCard({
           Dados comerciais necessários ficam armazenados localmente neste aparelho para permitir a operação offline.
         </p>
 
-        {mode === 'login' && (
+        {mode === 'login' && demoMode && (
           <div className="demo-credentials">
             <span className="eyebrow">MODO DEMONSTRAÇÃO</span>
             <code>{DEMO_CREDENTIALS.email}</code>
@@ -515,6 +518,8 @@ export function App() {
     notify
   ]);
 
+  const integrationMode = loadIntegrationConfig(integrationStorage()).mode;
+
   let content: React.ReactNode = null;
   if (stage === 'landing') {
     content = (
@@ -539,16 +544,19 @@ export function App() {
             <button className="button light" onClick={() => setStage('login')}>JÁ TENHO CONTA</button>
             <button className="landing-config-button" onClick={() => setStage('integration')}>CONFIGURAR INTEGRAÇÃO</button>
           </div>
-          <span className={online ? 'network online invertible' : 'network offline invertible'}>
-            {online ? 'Conectado' : 'Sem internet'}
-          </span>
+          <div className="landing-status-row">
+            <span className={online ? 'network online invertible' : 'network offline invertible'}>
+              {online ? 'Conectado' : 'Sem internet'}
+            </span>
+            <span className="integration-mode-label">{integrationMode === 'demo' ? 'Ambiente DEMO' : 'API real configurada'}</span>
+          </div>
         </div>
       </div>
     );
   } else if (stage === 'login') {
-    content = <AuthCard mode="login" online={online} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={email => { setRecoveryEmail(email); setStage('forgot'); }} />;
+    content = <AuthCard mode="login" online={online} demoMode={integrationMode === 'demo'} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={email => { setRecoveryEmail(email); setStage('forgot'); }} />;
   } else if (stage === 'register') {
-    content = <AuthCard mode="register" online={online} onBack={() => setStage('landing')} onSubmit={handleRegister} onForgot={() => undefined} />;
+    content = <AuthCard mode="register" online={online} demoMode={integrationMode === 'demo'} onBack={() => setStage('landing')} onSubmit={handleRegister} onForgot={() => undefined} />;
   } else if (stage === 'forgot') {
     content = <ForgotPassword gateway={gateway} initialEmail={recoveryEmail} onBack={() => setStage('login')} />;
   } else if (stage === 'integration') {
