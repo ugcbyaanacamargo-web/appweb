@@ -4,173 +4,155 @@ Last updated: 2026-09-19
 
 ## Current phase
 
-**Complete App Flows is integrated on `main` and deployed to the verified production URL `https://oris360-site.netlify.app/`. Real Óris360° server-side integrations remain external dependencies.**
+**Architectural adaptation of Óris360° to the real Saboriza/Supabase ecosystem is written and awaiting user review before implementation planning.**
 
-The fixed ten-item seller menu remains unchanged. Missing functional flows around integration setup, password recovery, reports, Sistema Online, WhatsApp status, Help actions, dynamic customer fields and Mission Web Push were implemented without inventing official endpoints or credentials.
+The canonical functional source remains:
 
-## Verified branch evidence
+- `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 
-Verified code SHA before this state/documentation update:
+The current integration design is:
 
-`6bde97aee6bf124871cf81c9586f547f55801225`
+- `docs/superpowers/specs/2026-09-19-oris360-complete-platform-design.md`
 
-GitHub Actions on that SHA:
+The Saboriza gap matrix is:
 
-- `Engine integrity`: success.
-- `app-ci`: success.
-  - runtime dependency audit: 0 vulnerabilities;
-  - lint: success;
-  - Vitest: 12 test files / 65 tests passed;
-  - TypeScript + Vite production build: success;
-  - PWA/Netlify artifact validation: success.
-- `e2e`: success.
-  - 7 Playwright Chromium journeys passed.
+- `docs/SABORIZA_ADAPTATION_MATRIX.md`
 
-The seven browser journeys cover:
-1. fixed ten-item menu;
-2. quote/customer/product gating and reload persistence;
-3. explicit send, sent-document lock and duplication;
-4. real-API configuration health check before activation;
-5. password recovery gateway flow;
-6. Reports, Sistema Online and WhatsApp gateway flows;
-7. backend-defined customer fields working offline and persisting after reload.
+## Verified production baseline before this design branch
 
-Final branch documentation changes still require their own current GitHub Actions evidence before integration.
+Production App:
+- `https://oris360-site.netlify.app/`
 
-## Repository intelligence
+Known verified seller-app baseline:
+- offline-first PWA;
+- fixed ten-item menu;
+- device/user/company/integration-realm isolation;
+- local Quotes/Orders;
+- explicit send;
+- idempotency contract;
+- sent-document lock;
+- manual transactional commercial sync;
+- offline customers;
+- Missions client;
+- Reports / Sistema Online / WhatsApp behind gateway;
+- generic HTTP integration setup;
+- CI + Playwright infrastructure.
 
-- canonical Prompt Mestre: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`;
-- brain entry: `docs/brain/INDEX.md`;
-- machine-readable graph: `docs/brain/GRAPH.json`;
-- functional audit: `docs/FUNCTIONAL_AUDIT.md`;
-- integration contract: `docs/API_INTEGRATION.md`;
-- Definition of Done: `docs/brain/DEFINITION_OF_DONE.md`.
+The existing 24 Prompt Mestre acceptance criteria remain mapped in:
+- `docs/ACCEPTANCE_MATRIX.md`
 
-## Product capabilities implemented
+## Real System Online target
 
-### Offline commercial operation
+The user identified:
 
-- React/TypeScript/Vite mobile-first PWA.
-- IndexedDB/Dexie local persistence.
-- Isolation by device + user + company + integration realm.
-- First activation online; later offline login from encrypted cached credentials.
-- Offline credentials are isolated between DEMO and each real API realm.
-- Fixed ten-item global menu.
-- Offline Quotes/Orders.
-- Save, Generate Order and Send remain separate actions.
-- Explicit transmission with idempotency.
-- Server confirmation required before sent state.
-- Sent-document lock and duplication as a new Quote.
-- Manual transactional commercial sync.
-- Central Order/Quote history is never downloaded.
+- `https://saboriza-catalogo.vercel.app/`
 
-### Customers
+Read-only inspection confirmed a matching public repository:
+- `Ruanzinn01/Saboriza-Catalogo`
 
-- offline create/edit;
-- CPF/CNPJ duplicate prevention;
-- central active/inactive ownership preserved;
-- backend-defined additional customer fields;
-- runtime sanitization of field schema and values;
-- local persistence of those fields;
-- pending customers sent before related documents.
+The inspected source declares the same Vercel production URL.
 
-### Real API client boundary
+## Saboriza capabilities already available
 
-- `HttpOrisGateway` implements the same application gateway as DEMO.
-- device-level integration setup screen;
-- HTTPS base URL + explicit endpoint mapping;
-- health check must pass before real mode is activated;
-- no server secret/private API key is stored in the browser;
-- runtime validation rejects malformed successful API payloads;
-- client-owned fields such as `scopeKey` and `pendingSync` are not required from the server;
-- integration realm keeps API environments isolated from each other and from DEMO.
+The public source currently contains:
 
-### Online/support flows
+- Supabase Auth for admin;
+- admin panel;
+- products;
+- categories;
+- customers;
+- suppliers;
+- orders;
+- order items;
+- coupons;
+- indicators;
+- settings;
+- public catalog/Delivery;
+- checkout;
+- RPCs `create_order` and `update_order_items`.
 
-- password recovery calls the configured gateway;
-- Reports & Commissions loads seller-scoped gateway data;
-- Sistema Online requests an integrated/temporary session URL;
-- WhatsApp/AI page reads backend integration status and management URL when supplied;
-- Help phone/WhatsApp/e-mail actions are driven by centrally synchronized data.
+## Architectural decision
 
-### Missions
+Óris360° remains the **seller/mobile/offline client**.
 
-- Mission execution remains available offline after receipt;
-- allowed automatic Mission return remains separate from sales-document transmission;
-- Web Push subscription client implemented;
-- public VAPID key comes from commercial configuration;
-- private VAPID key remains server-side;
-- logout/company change unsubscribes the browser push subscription;
-- push notification opens the Mission area;
-- supported Mission image evidence is limited to three images of at most 5 MB each.
+Saboriza remains the **Sistema Online/company-admin system**.
 
-## External dependencies still pending
+Do not build a second product/customer/order admin inside appweb.
 
-The repository now contains the client-side integration machinery, but the following production dependencies have **not** been provided or verified:
+The production integration should evolve from the generic HTTP setup to a dedicated Saboriza/Supabase adapter behind `OrisGateway`.
 
-- official Óris360° API base URL and route mappings;
-- real server implementation matching `docs/API_INTEGRATION.md`;
-- production authentication/session policy and real SSO provider;
-- real WhatsApp/AI provider integration;
-- VAPID private key and server-side Web Push delivery;
-- official complete customer-field schema supplied by the real backend;
-- existing Delivery module source/contract if its catalog must be reused literally;
-- official centrally configured support contacts;
-- future post-deploy validation only if the production hosting configuration changes.
+## Confirmed Saboriza gaps relative to the Prompt Mestre
 
-No endpoint, token, SSO URL, phone or e-mail is invented.
+Not proven in the public schema/source:
 
-## Deployment status
+- multi-company memberships;
+- seller profiles;
+- seller commission;
+- customer portfolio by seller;
+- CPF + CNPJ central model;
+- official calculated stock source exposed to the App;
+- allow-sale-without-stock setting;
+- central Quote representation;
+- server idempotency for Óris360° documents;
+- transactional commercial snapshot;
+- account/trial/block state;
+- Missions/assignments/evidence;
+- Push subscriptions/server sender;
+- team location/map;
+- seller-scoped report;
+- one-time SSO handoff;
+- central Óris360° Help contacts;
+- WhatsApp/AI integration state contract.
 
-Production URL:
+These are backend/integration gaps. They must not be hidden by frontend mocks.
 
-`https://oris360-site.netlify.app/`
+## Current design branch
 
-Verified after merge commit `15470ea93a44d24c3008ec8c4c2b005bdc824e89`.
+- branch: `feature/oris360-complete-platform`
+- purpose: design/adaptation only; no product behavior implementation yet.
 
-GitHub Actions production smoke run `35417386419` reached the public site on the first attempt, loaded deployed bundle `/assets/index-DUNrBZVX.js`, and found marker `oris360.integration.v1`, which is unique to the new integration-capable build.
+## Gate before product implementation
 
-A permanent `.github/workflows/production-smoke.yml` now checks the production Netlify URL on every push to `main`.
+Superpowers architectural workflow requires:
 
-## Next concrete work
+1. written specification;
+2. self-review;
+3. user review/approval;
+4. only then `writing-plans`;
+5. then TDD implementation in isolated work.
 
-1. Keep the production smoke gate green on every `main` update.
-2. When official backend details are supplied, use `CONFIGURAR INTEGRAÇÃO` and `docs/API_INTEGRATION.md` to connect and validate the real environment.
-3. Re-run end-to-end production validation whenever hosting, API, SSO, WhatsApp or Web Push configuration changes.
+Therefore the next step after this design branch is **user review of the written Saboriza integration spec**.
+
+## Implementation direction after approval
+
+Preserve Prompt Mestre phases:
+
+1. Foundation — Saboriza gateway/auth/membership/first snapshot.
+2. Commercial operation — customer/product/catalog/price/stock mapping.
+3. Transmission — client upsert, quote/order, idempotency, official number.
+4. Sync — pending clients, transactional snapshot, blocked-account behavior.
+5. Integrations — Missions, push, location, reports/commission, SSO, Help, WhatsApp/AI.
+
+## External inputs required before real production integration
+
+- Saboriza Supabase project URL;
+- Supabase publishable key;
+- authorized access for migrations/RLS/RPC/Edge Functions;
+- safe test environment or explicit production-change procedure;
+- official Help contacts;
+- official commission eligibility rule;
+- server-side VAPID/WhatsApp/AI secrets only when those phases are implemented.
+
+Never put secret/service-role keys in frontend or chat.
 
 ## Relevant entry points
 
 - `AGENTS.md`
 - `docs/brain/INDEX.md`
 - `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
-- `docs/FUNCTIONAL_AUDIT.md`
+- `docs/superpowers/specs/2026-09-19-oris360-complete-platform-design.md`
+- `docs/SABORIZA_ADAPTATION_MATRIX.md`
 - `docs/API_INTEGRATION.md`
 - `docs/ACCEPTANCE_MATRIX.md`
 - `src/infrastructure/orisGateway.ts`
-- `src/infrastructure/httpOrisGateway.ts`
-- `src/infrastructure/integrationConfig.ts`
 - `src/infrastructure/gatewayFactory.ts`
-- `src/app/App.tsx`
-
-
-## Integration target discovered — 2026-09-19
-
-The user identified https://saboriza-catalogo.vercel.app/ as the Sistema Online/backend ecosystem that Óris360° must integrate with.
-
-Read-only inspection confirmed a matching public source repository:
-- Ruanzinn01/Saboriza-Catalogo
-- confirmed by its index.html declaring the same public Vercel URL.
-
-Important architecture facts:
-- Vercel hosts the Saboriza frontend.
-- Saboriza data/auth use Supabase.
-- Existing central resources include products, categories, customers, suppliers, orders/order_items, coupons, settings and IBGE cities.
-- Existing database RPCs include create_order and update_order_items.
-- The published schema does not yet expose seller, customer-portfolio assignment, missions, commissions, team location, push subscription or Óris-specific idempotency/stock structures.
-
-Direction:
-- do not duplicate Saboriza admin features in appweb;
-- Óris360° is the seller/offline client;
-- Saboriza remains the company/admin System Online;
-- integrate through a Saboriza/Supabase gateway and server-side RPC/API for sensitive rules;
-- real integration requires authorized Supabase project URL + publishable key and access to add/review migrations/RLS/RPCs.
