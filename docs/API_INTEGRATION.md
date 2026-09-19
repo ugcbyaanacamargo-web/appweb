@@ -61,6 +61,10 @@ O adaptador envia, quando houver contexto autenticado:
 
 Tokens nunca são enviados em query string.
 
+### CORS
+
+Como o App é uma PWA executada no navegador, o backend deve permitir CORS somente para os domínios autorizados do App (por exemplo, o domínio Netlify de produção e ambientes de desenvolvimento aprovados). Não use `Access-Control-Allow-Origin: *` junto com credenciais sensíveis em produção.
+
 ## Rotas configuráveis
 
 | Campo da tela | Método | Finalidade |
