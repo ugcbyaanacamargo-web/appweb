@@ -20,6 +20,7 @@ export interface ContextRecord {
   helpPhone?: string;
   helpEmail?: string;
   onlineBaseUrl?: string;
+  missionPushPublicKey?: string;
 }
 
 export class OrisDb extends Dexie {
@@ -143,7 +144,8 @@ export async function replaceCommercialSnapshot(
         allowSaleWithoutStock: snapshot.settings.allowSaleWithoutStock,
         helpPhone: snapshot.settings.helpPhone,
         helpEmail: snapshot.settings.helpEmail,
-        onlineBaseUrl: snapshot.settings.onlineBaseUrl
+        onlineBaseUrl: snapshot.settings.onlineBaseUrl,
+        missionPushPublicKey: snapshot.settings.missionPushPublicKey
       });
     }
   );
