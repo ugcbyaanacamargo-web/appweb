@@ -105,7 +105,8 @@ describe('local database isolation', () => {
         allowSaleWithoutStock: false,
         accountBlocked: false,
         customerFields: [
-          { key: 'phone', label: 'Telefone', type: 'tel' }
+          { key: 'phone', label: 'Telefone', type: 'tel' },
+          { key: 'evil', label: 'Campo inválido', type: 'file' as never }
         ]
       }
     });
