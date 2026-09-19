@@ -48,3 +48,11 @@ export async function subscribeMissionPush(publicKey: string): Promise<PushSubsc
   }
   return pushSubscriptionPayload(subscription.toJSON());
 }
+
+
+export async function unsubscribeMissionPush(): Promise<void> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (subscription) await subscription.unsubscribe();
+}
