@@ -26,7 +26,7 @@ import { Missions } from '../ui/Missions';
 import { Help, OnlineSystem, Reports, WhatsappAI } from '../ui/OnlinePages';
 import { QuoteEditor } from '../ui/QuoteEditor';
 import { IntegrationSetup } from '../ui/IntegrationSetup';
-import { integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
+import { integrationRealm, integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
 import { ForgotPassword } from '../ui/ForgotPassword';
 import type { MainPage } from '../ui/menu';
 
@@ -353,15 +353,16 @@ export function App() {
 
   const handleLogin = async (email: string, password: string) => {
     try {
+      const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
       const result = online
         ? await gateway.authenticate({ email, password })
-        : await verifyOfflineCredentials(localStorage, email, password);
+        : await verifyOfflineCredentials(localStorage, email, password, realm);
 
       if (!result) {
         notify('Login offline indisponível. Faça primeiro um login e sincronização válidos com internet.', 'warning');
         return;
       }
-      if (online) await cacheOfflineCredentials(localStorage, email, password, result);
+      if (online) await cacheOfflineCredentials(localStorage, email, password, result, realm);
       setAuth(result);
 
       if (result.companies.length === 1) {
@@ -382,7 +383,8 @@ export function App() {
     }
     try {
       const result = await gateway.createAccount({ email, password });
-      await cacheOfflineCredentials(localStorage, email, password, result);
+      const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
+      await cacheOfflineCredentials(localStorage, email, password, result, realm);
       setAuth(result);
       await activateCompany(result, result.companies[0].id);
     } catch (error) {
