@@ -5,6 +5,7 @@ export interface Scope {
   deviceId: string;
   userId: string;
   companyId: string;
+  realm?: string;
 }
 
 export type CustomerFieldType = 'text' | 'email' | 'tel' | 'number' | 'date';
