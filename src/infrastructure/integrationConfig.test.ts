@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createEmptyHttpIntegrationConfig,
+  integrationRealm,
   loadIntegrationConfig,
   saveIntegrationConfig,
   validateIntegrationConfig,
@@ -59,4 +60,31 @@ describe('integrationConfig', () => {
     saveIntegrationConfig(storage, config);
     expect(loadIntegrationConfig(storage)).toEqual(config);
   });
+  it('keeps case-sensitive API base paths isolated in integration realms', () => {
+    const upper = createEmptyHttpIntegrationConfig();
+    upper.baseUrl = 'https://api.example.com/TenantA';
+    upper.endpoints.health = '/health';
+    upper.endpoints.authenticate = '/login';
+    upper.endpoints.createAccount = '/accounts';
+    upper.endpoints.requestPasswordReset = '/password-reset';
+    upper.endpoints.commercialSnapshot = '/snapshot';
+    upper.endpoints.upsertCustomer = '/customers/upsert';
+    upper.endpoints.sendDocument = '/documents/send';
+    upper.endpoints.missions = '/missions';
+    upper.endpoints.missionReturn = '/missions/return';
+    upper.endpoints.location = '/location';
+    upper.endpoints.sellerReport = '/reports/seller';
+    upper.endpoints.onlineSession = '/online/session';
+    upper.endpoints.whatsappStatus = '/whatsapp/status';
+    upper.endpoints.pushSubscription = '/push/subscription';
+
+    const lower = {
+      ...upper,
+      endpoints: { ...upper.endpoints },
+      baseUrl: 'https://api.example.com/tenanta'
+    };
+
+    expect(integrationRealm(upper)).not.toBe(integrationRealm(lower));
+  });
+
 });
