@@ -4,17 +4,7 @@ import { getScopeMissions } from '../infrastructure/db';
 import { completeMissionOffline } from '../services/missions';
 import { useRuntime } from '../app/AppContext';
 import { subscribeMissionPush } from '../infrastructure/push';
-
-async function filesToDataUrls(files: FileList | null): Promise<string[]> {
-  if (!files) return [];
-  const selected = Array.from(files).slice(0, 3);
-  return Promise.all(selected.map(file => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  })));
-}
+import { missionFilesToDataUrls } from '../infrastructure/missionEvidence';
 
 export function Missions() {
   const runtime = useRuntime();
@@ -171,7 +161,14 @@ export function Missions() {
                   accept="image/*"
                   capture="environment"
                   multiple
-                  onChange={async event => setEvidence(await filesToDataUrls(event.target.files))}
+                  onChange={async event => {
+                    try {
+                      setEvidence(await missionFilesToDataUrls(event.target.files));
+                    } catch (error) {
+                      runtime.notify(error instanceof Error ? error.message : 'Não foi possível adicionar as evidências.', 'warning');
+                      event.target.value = '';
+                    }
+                  }}
                 />
               </label>
               <button className="button secondary" onClick={captureLocation}>
