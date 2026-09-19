@@ -7,12 +7,23 @@ export interface Scope {
   companyId: string;
 }
 
+export type CustomerFieldType = 'text' | 'email' | 'tel' | 'number' | 'date';
+
+export interface CustomerFieldDefinition {
+  key: string;
+  label: string;
+  type: CustomerFieldType;
+  required?: boolean;
+  maxLength?: number;
+}
+
 export interface Customer {
   id: string;
   officialId?: string;
   scopeKey: string;
   name: string;
   taxId: string;
+  extraFields?: Record<string, string>;
   active: boolean;
   pendingSync: boolean;
   updatedAt: string;
@@ -69,6 +80,7 @@ export interface CommercialSettings {
   helpEmail?: string;
   onlineBaseUrl?: string;
   missionPushPublicKey?: string;
+  customerFields?: CustomerFieldDefinition[];
 }
 
 export interface CommercialSnapshot {
