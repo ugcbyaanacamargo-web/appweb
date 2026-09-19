@@ -117,4 +117,20 @@ describe('local database isolation', () => {
     expect((await db.customers.get([scopeKey, 'c1']))?.extraFields?.phone).toBe('62999990000');
   });
 
+  it('R14 also isolates identical device/user/company IDs across integration realms', () => {
+    const demo = makeScopeKey({
+      deviceId: 'd1',
+      userId: 'u1',
+      companyId: 'c1',
+      realm: 'demo'
+    });
+    const real = makeScopeKey({
+      deviceId: 'd1',
+      userId: 'u1',
+      companyId: 'c1',
+      realm: 'http:https://api.example.com|/login|/snapshot'
+    });
+    expect(real).not.toBe(demo);
+  });
+
 });
