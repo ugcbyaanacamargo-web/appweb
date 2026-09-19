@@ -1,43 +1,83 @@
 # Complete App Flows Implementation Plan
 
-**Goal:** Close functional gaps that remain outside the 24 domain acceptance checks without violating the fixed Óris360° App structure.
+**Goal:** Close functional gaps outside the 24 domain acceptance checks without violating the fixed Óris360° App structure.
+
+**Status:** implementation and review complete on the feature branch; final documentation SHA still requires fresh CI before branch finishing.
 
 ## Approved design
 
-The user authorized autonomous completion of missing flows. The fixed ten-item seller menu remains unchanged.
+- [x] Keep DEMO explicit.
+- [x] Keep the fixed ten-item seller menu unchanged.
+- [x] Add device-level integration setup outside that menu.
+- [x] Store only non-secret API metadata.
+- [x] Require real API health validation before activation.
+- [x] Keep server secrets out of the browser.
+- [x] Preserve `OrisGateway` as the integration boundary.
 
-### Integration architecture
-- Keep DEMO mode explicit and functional.
-- Add a device-level **Configuração técnica da integração** outside the fixed seller menu, reachable before login and from Sistema Online.
-- Store only non-secret integration metadata locally: base URL and endpoint paths.
-- Never store server secrets/API private keys in browser storage.
-- A real HTTP gateway activates only after its configured health endpoint succeeds.
-- The HTTP backend must satisfy the documented Óris360° gateway contract; no official endpoint is invented.
+## Functional work
 
-### Functional gaps to close
-1. Password recovery becomes a real gateway action.
-2. Reports/Commissions loads real gateway data (DEMO or HTTP).
-3. Sistema Online requests an integrated session/SSO URL from the gateway.
-4. WhatsApp page loads backend integration status/management URL.
-5. Help contacts become actionable links.
-6. Mission notification setup registers Web Push when the backend supplies a public VAPID key.
-7. Integration setup validates connection and explains where each value comes from.
-8. Errors identify missing/invalid integration configuration.
-9. Browser tests cover integration setup and newly functional flows.
+- [x] Password recovery gateway flow.
+- [x] Reports & Commissions gateway flow.
+- [x] Sistema Online integrated-session/SSO flow.
+- [x] WhatsApp/AI status and management flow.
+- [x] Actionable Help contacts.
+- [x] Mission Web Push client/subscription flow.
+- [x] Integration setup and diagnostics.
+- [x] Dynamic backend-defined customer fields.
+- [x] Mission evidence validation.
+- [x] Real API runtime payload validation.
+- [x] Offline-auth realm isolation.
+- [x] Local database realm isolation.
+- [x] Client-owned `scopeKey` mapping.
 
-### External boundaries that remain external
-- Official Óris360° endpoint URLs/credentials.
-- Server-side API implementation if the existing backend does not match the gateway contract.
-- Server-side Web Push delivery/VAPID private key.
-- Real Sistema Online SSO provider.
-- Real WhatsApp/AI provider configuration.
-- Full customer schema fields not supplied by the real API contract.
-- Existing Delivery catalog code if it lives outside this repository.
+## TDD evidence observed during implementation
 
-## TDD / delivery
-- Add failing tests for integration config and HTTP adapter.
-- Implement infrastructure.
-- Implement UI flows.
-- Extend Playwright.
-- Run lint, Vitest, build, Playwright, engine validator and GitHub Actions.
-- Review/security review before merge.
+- [x] Integration-config and HTTP-gateway tests failed before modules existed.
+- [x] Web Push helper tests failed before implementation.
+- [x] Dynamic-customer-field persistence test failed before persistence/schema support.
+- [x] Mission-evidence tests failed before validator implementation.
+- [x] Malformed-HTTP-success test failed before runtime response validation.
+- [x] Integration-specific offline-auth test failed before realm namespacing.
+- [x] Integration-realm local-data test failed before scope-key isolation.
+- [x] Case-sensitive realm test failed before URL normalization correction.
+
+## Review/security corrections
+
+- [x] Never store server/API private keys in browser storage.
+- [x] Real integration only activates after health check.
+- [x] External JSON is validated before domain use.
+- [x] Integration environments cannot share offline auth.
+- [x] Integration environments cannot share local DB scope.
+- [x] Local-only identifiers do not become server contract requirements.
+- [x] Push subscription is removed on logout/company change.
+- [x] External URLs used by Online/WhatsApp flows are constrained to HTTPS (localhost allowed for development).
+
+## Verified code SHA
+
+`6bde97aee6bf124871cf81c9586f547f55801225`
+
+Evidence on that SHA:
+- [x] Engine integrity — success.
+- [x] Runtime dependency audit — 0 vulnerabilities.
+- [x] ESLint — success.
+- [x] Vitest — 12 files / 65 tests passed.
+- [x] TypeScript/Vite production build — success.
+- [x] PWA/Netlify artifact check — success.
+- [x] Playwright Chromium — 7/7 journeys passed.
+
+## External boundaries still pending
+
+- [ ] Official Óris360° API URL/routes — external input required.
+- [ ] Real server implementation — external system required.
+- [ ] Real SSO provider — external system required.
+- [ ] WhatsApp/AI provider — external system required.
+- [ ] VAPID private key/push sender — server-side required.
+- [ ] Official complete customer schema — backend input required.
+- [ ] Existing Delivery module literal reuse — source/contract required.
+- [ ] Production Netlify deployment/post-deploy verification — authorized deployment access required.
+
+## Branch finishing
+
+- [ ] Obtain fresh CI for final documentation/state SHA.
+- [ ] Review final diff.
+- [ ] Choose branch finishing action (merge / PR / keep branch).
