@@ -75,4 +75,18 @@ describe('HttpOrisGateway', () => {
     await expect(gateway.authenticate({ email: 'x@example.com', password: 'bad' }))
       .rejects.toMatchObject({ code: 'AUTH_FAILED' });
   });
+
+  it('rejects malformed successful payloads instead of trusting TypeScript casts', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: {
+        user: { id: 'u1' },
+        companies: 'not-an-array',
+        token: 123
+      }
+    }), { status: 200 })));
+    const gateway = new HttpOrisGateway(config);
+    await expect(gateway.authenticate({ email: 'ana@example.com', password: '123456' }))
+      .rejects.toMatchObject({ code: 'INVALID_DATA' });
+  });
+
 });
