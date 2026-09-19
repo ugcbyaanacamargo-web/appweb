@@ -105,3 +105,44 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** Unit/domain tests can pass while buttons, navigation or persistence flows remain broken in the browser.
 
 **Consequence:** Interactive features should gain/maintain E2E coverage when technically testable, and completion claims require current CI evidence.
+
+## 2026-09-19 — Real API configuration is explicit and secret-free in the browser
+
+**Decision:** The PWA may store only non-secret integration metadata: HTTPS base URL and route mappings. A real integration profile activates only after its health endpoint succeeds.
+
+**Reason:** The user needs a self-service place to connect the App, but browser-delivered code cannot safely hold server private keys.
+
+**Consequence:** Server secrets remain in the backend/hosting secret store. The App sends only the authenticated user's session token after login and never invents official endpoints.
+
+## 2026-09-19 — Integration realm is part of local trust/isolation
+
+**Decision:** Offline authentication cache and local data scopes are separated by integration realm in addition to device, user and company.
+
+**Reason:** DEMO and a real API — or two real API environments — may reuse the same user/company IDs and must never share local commercial state.
+
+**Consequence:** Switching integration profiles cannot expose another realm's offline credentials or IndexedDB scope. DEMO retains the legacy scope-key shape; real realms receive an encoded realm prefix.
+
+## 2026-09-19 — External API payloads require runtime validation
+
+**Decision:** Successful HTTP responses are validated at runtime before entering application/domain state.
+
+**Reason:** TypeScript types do not validate untrusted JSON. A malformed 200 response must not corrupt authentication, snapshots, documents, reports, missions or online integration state.
+
+**Consequence:** Malformed success payloads fail with `INVALID_DATA` instead of being trusted through type casts.
+
+## 2026-09-19 — Customer extensibility is backend-schema driven
+
+**Decision:** Name and CPF/CNPJ remain the fixed local base, while additional editable customer fields are defined by a synchronized backend schema.
+
+**Reason:** The master specification requires editing all allowed customer data, but the official complete field schema has not been supplied.
+
+**Consequence:** The App renders/persists only allowed sanitized field definitions and does not invent permanent commercial fields.
+
+## 2026-09-19 — Mission push uses a client/server split
+
+**Decision:** The PWA owns notification permission, Web Push subscription and service-worker handling; the backend owns VAPID private credentials and actual push delivery.
+
+**Reason:** Private push credentials cannot safely exist in browser code, while Missions are the specification's automatic-notification exception.
+
+**Consequence:** The commercial snapshot may supply only the public VAPID key. Production push remains dependent on server-side delivery.
+
