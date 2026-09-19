@@ -4,7 +4,7 @@ Last updated: 2026-09-19
 
 ## Current phase
 
-**Complete App Flows is implemented on `feature/complete-app-flows` and has passed code/browser gates on the verified code SHA `6bde97aee6bf124871cf81c9586f547f55801225`. The real Óris360° server-side integrations and production Netlify deployment remain external dependencies.**
+**Complete App Flows is integrated on `main` and deployed to the verified production URL `https://oris360-site.netlify.app/`. Real Óris360° server-side integrations remain external dependencies.**
 
 The fixed ten-item seller menu remains unchanged. Missing functional flows around integration setup, password recovery, reports, Sistema Online, WhatsApp status, Help actions, dynamic customer fields and Mission Web Push were implemented without inventing official endpoints or credentials.
 
@@ -116,21 +116,27 @@ The repository now contains the client-side integration machinery, but the follo
 - official complete customer-field schema supplied by the real backend;
 - existing Delivery module source/contract if its catalog must be reused literally;
 - official centrally configured support contacts;
-- production Netlify site/URL and post-deploy validation.
+- future post-deploy validation only if the production hosting configuration changes.
 
 No endpoint, token, SSO URL, phone or e-mail is invented.
 
 ## Deployment status
 
-Netlify configuration exists and builds successfully in CI. A production `*.netlify.app` deployment has not been created/verified from this runtime.
+Production URL:
+
+`https://oris360-site.netlify.app/`
+
+Verified after merge commit `15470ea93a44d24c3008ec8c4c2b005bdc824e89`.
+
+GitHub Actions production smoke run `35417386419` reached the public site on the first attempt, loaded deployed bundle `/assets/index-DUNrBZVX.js`, and found marker `oris360.integration.v1`, which is unique to the new integration-capable build.
+
+A permanent `.github/workflows/production-smoke.yml` now checks the production Netlify URL on every push to `main`.
 
 ## Next concrete work
 
-1. Validate this final documentation/state SHA through all GitHub Actions gates.
-2. Review the final branch diff.
-3. Create/merge the delivery PR only according to the chosen branch-finishing action.
-4. When official backend details are supplied, use `CONFIGURAR INTEGRAÇÃO` and `docs/API_INTEGRATION.md` to connect and validate the real environment.
-5. Validate the production Netlify deployment separately.
+1. Keep the production smoke gate green on every `main` update.
+2. When official backend details are supplied, use `CONFIGURAR INTEGRAÇÃO` and `docs/API_INTEGRATION.md` to connect and validate the real environment.
+3. Re-run end-to-end production validation whenever hosting, API, SSO, WhatsApp or Web Push configuration changes.
 
 ## Relevant entry points
 
