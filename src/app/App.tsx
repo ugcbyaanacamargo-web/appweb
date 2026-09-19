@@ -4,6 +4,7 @@ import { OrisDb, type ContextRecord } from '../infrastructure/db';
 import { DEMO_CREDENTIALS } from '../infrastructure/demoOrisGateway';
 import { createOrisGateway } from '../infrastructure/gatewayFactory';
 import { readOnline, subscribeConnectivity } from '../infrastructure/connectivity';
+import { subscribeMissionPush, unsubscribeMissionPush } from '../infrastructure/push';
 import { getOrCreateDeviceId, makeScopeKey } from '../infrastructure/scope';
 import type { GatewayContext } from '../infrastructure/orisGateway';
 import { synchronizeCommercialBase } from '../services/sync';
@@ -256,12 +257,31 @@ export function App() {
     setAuth(sessionAuth);
     setActive(runtime);
     setStage('app');
-    setPage('orders');
+    const requestedPage = new URLSearchParams(window.location.search).get('open') === 'missions'
+      ? 'missions'
+      : 'orders';
+    setPage(requestedPage);
+    if (requestedPage === 'missions') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+    }
     setDocumentId(null);
     setMenuOpen(true);
     saveLiveSession(sessionStorage, { auth: sessionAuth, activeCompanyId: companyId });
 
     if (readOnline()) {
+      if (
+        context.missionPushPublicKey &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        try {
+          const subscription = await subscribeMissionPush(context.missionPushPublicKey);
+          await gateway.registerMissionPushSubscription(gatewayContext, subscription);
+        } catch {
+          // Push é auxiliar; uma falha de registro não bloqueia a operação comercial.
+        }
+      }
+
       try {
         const missions = await gateway.fetchMissions(gatewayContext);
         for (const mission of missions) {
@@ -435,7 +455,8 @@ export function App() {
     setMenuOpen(false);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await unsubscribeMissionPush(); } catch { /* best effort */ }
     clearLiveSession(sessionStorage);
     setActive(null);
     setAuth(null);
@@ -445,8 +466,9 @@ export function App() {
     notify('Sessão encerrada. Os dados locais foram preservados neste aparelho.', 'info');
   };
 
-  const chooseAnotherCompany = () => {
+  const chooseAnotherCompany = async () => {
     if (!auth) return;
+    try { await unsubscribeMissionPush(); } catch { /* best effort */ }
     setStage('companies');
     setMenuOpen(false);
     setActive(null);
@@ -454,6 +476,7 @@ export function App() {
   };
 
   const integrationSaved = (message: string) => {
+    void unsubscribeMissionPush().catch(() => undefined);
     clearLiveSession(sessionStorage);
     setActive(null);
     setAuth(null);
