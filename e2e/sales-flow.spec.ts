@@ -104,6 +104,7 @@ test('configuração técnica valida a API antes de ativar o modo real', async (
   await page.route('https://api.example.test/health', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
+    headers: { 'Access-Control-Allow-Origin': '*' },
     body: JSON.stringify({ ok: true })
   }));
 
