@@ -55,13 +55,14 @@ async function deriveOfflineKey(
   email: string,
   password: string,
   salt: Uint8Array,
-  iterations: number
+  iterations: number,
+  realm: string
 ): Promise<CryptoKey> {
   if (!globalThis.crypto?.subtle) throw new Error('WEB_CRYPTO_UNAVAILABLE');
 
   const material = await globalThis.crypto.subtle.importKey(
     'raw',
-    toArrayBuffer(new TextEncoder().encode(normalizeEmail(email) + ':' + password)),
+    toArrayBuffer(new TextEncoder().encode(realm + ':' + normalizeEmail(email) + ':' + password)),
     'PBKDF2',
     false,
     ['deriveKey']
@@ -81,21 +82,22 @@ async function deriveOfflineKey(
   );
 }
 
-function offlineKey(email: string): string {
-  return 'oris360.offlineAuth.v2:' + encodeURIComponent(normalizeEmail(email));
+function offlineKey(email: string, realm = 'demo'): string {
+  return 'oris360.offlineAuth.v2:' + encodeURIComponent(realm) + ':' + encodeURIComponent(normalizeEmail(email));
 }
 
 export async function cacheOfflineCredentials(
   storage: StorageLike,
   email: string,
   password: string,
-  auth: AuthResult
+  auth: AuthResult,
+  realm = 'demo'
 ): Promise<void> {
   if (!globalThis.crypto?.subtle) throw new Error('WEB_CRYPTO_UNAVAILABLE');
 
   const salt = globalThis.crypto.getRandomValues(new Uint8Array(16));
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveOfflineKey(email, password, salt, PBKDF2_ITERATIONS);
+  const key = await deriveOfflineKey(email, password, salt, PBKDF2_ITERATIONS, realm);
   const plaintext = new TextEncoder().encode(JSON.stringify(auth));
   const encrypted = await globalThis.crypto.subtle.encrypt(
     { name: 'AES-GCM', iv: toArrayBuffer(iv) },
@@ -111,15 +113,16 @@ export async function cacheOfflineCredentials(
     iterations: PBKDF2_ITERATIONS,
     cachedAt: new Date().toISOString()
   };
-  storage.setItem(offlineKey(email), JSON.stringify(record));
+  storage.setItem(offlineKey(email, realm), JSON.stringify(record));
 }
 
 export async function verifyOfflineCredentials(
   storage: StorageLike,
   email: string,
-  password: string
+  password: string,
+  realm = 'demo'
 ): Promise<AuthResult | null> {
-  const raw = storage.getItem(offlineKey(email));
+  const raw = storage.getItem(offlineKey(email, realm));
   if (!raw || !globalThis.crypto?.subtle) return null;
 
   try {
@@ -135,7 +138,7 @@ export async function verifyOfflineCredentials(
     const salt = hexToBytes(record.salt);
     const iv = hexToBytes(record.iv);
     const ciphertext = hexToBytes(record.ciphertext);
-    const key = await deriveOfflineKey(email, password, salt, record.iterations);
+    const key = await deriveOfflineKey(email, password, salt, record.iterations, realm);
     const decrypted = await globalThis.crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: toArrayBuffer(iv) },
       key,
