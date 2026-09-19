@@ -139,7 +139,9 @@ export function saveIntegrationConfig(storage: IntegrationStorage, config: Integ
 
 export function integrationRealm(config: IntegrationConfig): string {
   if (config.mode === 'demo') return 'demo';
-  const base = config.baseUrl.trim().replace(/\/+$/, '').toLowerCase();
+  const url = new URL(config.baseUrl.trim());
+  const path = url.pathname.replace(/\/+$/, '');
+  const base = url.origin.toLowerCase() + path;
   return 'http:' + base + '|' + config.endpoints.authenticate.trim() + '|' + config.endpoints.commercialSnapshot.trim();
 }
 
