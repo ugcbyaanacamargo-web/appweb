@@ -68,6 +68,7 @@ export interface CommercialSettings {
   helpPhone?: string;
   helpEmail?: string;
   onlineBaseUrl?: string;
+  missionPushPublicKey?: string;
 }
 
 export interface CommercialSnapshot {
@@ -114,4 +115,35 @@ export interface SendDocumentResult {
   officialNumber: string;
   acceptedItems: DocumentItem[];
   sentAt: string;
+}
+
+export interface SellerReport {
+  periodLabel: string;
+  ordersCount: number;
+  quotesCount: number;
+  grossSales: number;
+  commissionPercent: number;
+  commissionValue: number;
+}
+
+export interface OnlineSessionResult {
+  available: boolean;
+  url?: string;
+  message?: string;
+}
+
+export interface WhatsappIntegrationStatus {
+  available: boolean;
+  connected: boolean;
+  managementUrl?: string;
+  message?: string;
+}
+
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  expirationTime?: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
 }
