@@ -556,3 +556,116 @@ Sem backend/API central:
 - não existe SSO cross-domain real.
 
 Esses limites não serão mascarados com dados falsos em produção.
+
+
+## 26. Sistema Online oficial: Saboriza
+
+O Sistema Online a ser integrado foi identificado pelo usuário como:
+
+https://saboriza-catalogo.vercel.app/
+
+A fonte pública correspondente foi confirmada em:
+
+Ruanzinn01/Saboriza-Catalogo
+
+O HTML desse repositório declara exatamente o domínio acima como URL pública do site, portanto ele é tratado como a referência de integração atual.
+
+### Arquitetura existente que deve ser reaproveitada
+
+O Saboriza já possui:
+
+- catálogo público;
+- painel administrativo em /admin;
+- autenticação administrativa via Supabase Auth;
+- produtos;
+- categorias;
+- clientes;
+- fornecedores;
+- pedidos e itens;
+- cupons;
+- indicadores;
+- configurações empresariais/fiscais;
+- funções de banco para criar pedido e atualizar itens.
+
+O backend real usado pelo site é Supabase. O Vercel hospeda a interface.
+
+### Regra de integração
+
+Não duplicar no appweb os módulos empresariais que já existem no Saboriza.
+
+O Óris360° será o App do Vendedor e deve compartilhar a mesma fonte central de dados, por uma camada autorizada.
+
+Fluxo desejado:
+
+Saboriza Admin / Supabase
+→ produtos, clientes, vendedores, carteiras, missões e regras
+→ API/RPC segura do Saboriza
+→ Óris360° sincroniza base comercial
+→ vendedor trabalha offline
+→ vendedor envia cliente/pedido/missão
+→ API/RPC segura
+→ Supabase
+→ painel Saboriza enxerga o resultado
+
+### Dados existentes hoje no schema público versionado do Saboriza
+
+Tabelas conhecidas:
+- categories
+- coupons
+- customers
+- ibge_cities
+- order_items
+- orders
+- products
+- settings
+- suppliers
+
+Funções conhecidas:
+- create_order
+- update_order_items
+
+O schema versionado no repositório ainda não contém estruturas explícitas para:
+- vendedor;
+- perfil/papel por vendedor;
+- carteira cliente-vendedor;
+- missão e atribuição;
+- comissão;
+- assinatura Web Push;
+- localização de equipe;
+- idempotência específica do App Óris360°;
+- estoque central de produto.
+
+Essas lacunas precisam ser tratadas no backend Saboriza/Supabase antes de prometer sincronização real desses recursos.
+
+### Decisão de fronteira
+
+O appweb continuará sem conhecer tabelas Supabase diretamente nas regras de negócio.
+
+Criar uma implementação específica do gateway para Saboriza/Supabase, preservando os contratos do domínio.
+
+As operações simples de leitura podem usar Supabase com chave pública e RLS quando isso estiver comprovadamente protegido.
+
+Operações sensíveis devem usar RPC/Edge Function/API server-side quando precisarem:
+- validar vendedor/empresa;
+- garantir idempotência;
+- aplicar regra de estoque;
+- atribuir carteira;
+- criar/atribuir missão;
+- calcular comissão;
+- gerar SSO;
+- enviar Web Push;
+- usar segredos do WhatsApp/IA.
+
+### Configuração que será necessária
+
+No deploy do Óris360°:
+- URL do projeto Supabase usado pelo Saboriza;
+- chave pública/publishable/anon do projeto;
+- URL pública do Sistema Online: https://saboriza-catalogo.vercel.app/
+
+Nunca colocar service-role key ou outros segredos no frontend.
+
+Para alterar o banco real serão necessários:
+- acesso autorizado ao projeto Supabase;
+- migrations/RLS/RPCs revisadas;
+- ambiente de teste ou possibilidade de validar sem arriscar dados de produção.
