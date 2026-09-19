@@ -196,6 +196,30 @@ export function QuoteEditor({ documentId, onBack, onOpenDocument }: QuoteEditorP
     runtime.notify('Resumo copiado para a área de transferência.', 'success');
   };
 
+  const openOnline = async () => {
+    if (!runtime.online) {
+      runtime.notify('Conexão necessária para abrir o Sistema Online.', 'warning');
+      return;
+    }
+    try {
+      const session = await runtime.gateway.createOnlineSession(runtime.gatewayContext);
+      const target = session.url ?? runtime.context.onlineBaseUrl;
+      if (!target) {
+        runtime.notify(session.message || 'O backend ainda não forneceu uma sessão do Sistema Online.', 'warning');
+        return;
+      }
+      const url = new URL(target);
+      const local = url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1');
+      if (url.protocol !== 'https:' && !local) {
+        runtime.notify('A URL do Sistema Online recebida não é segura.', 'error');
+        return;
+      }
+      window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      runtime.notify(error instanceof Error ? error.message : 'Não foi possível abrir o Sistema Online.', 'error');
+    }
+  };
+
   const updateSupplemental = (field: keyof SalesDocument['supplemental'], value: string) => {
     if (!editable) return;
     const numericFields = new Set(['freight', 'discount', 'surcharge']);
@@ -359,13 +383,9 @@ export function QuoteEditor({ documentId, onBack, onOpenDocument }: QuoteEditorP
 
       {document.state === 'sent' && (
         <div className="action-stack">
-          {runtime.context.onlineBaseUrl ? (
-            <a className="button primary link-button" href={runtime.context.onlineBaseUrl} target="_blank" rel="noreferrer">
-              VER NO SISTEMA ONLINE
-            </a>
-          ) : (
-            <button className="button secondary" disabled>VER NO SISTEMA ONLINE — URL NÃO CONFIGURADA</button>
-          )}
+          <button className="button primary" disabled={!runtime.online} onClick={openOnline}>
+            VER NO SISTEMA ONLINE
+          </button>
           <button className="button dark" onClick={duplicate}>DUPLICAR PEDIDO</button>
         </div>
       )}
