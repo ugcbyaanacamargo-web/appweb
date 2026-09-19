@@ -89,4 +89,47 @@ describe('HttpOrisGateway', () => {
       .rejects.toMatchObject({ code: 'INVALID_DATA' });
   });
 
+  it('injects device scope into server commercial data instead of requiring local fields from API', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      data: {
+        version: 'v1',
+        synchronizedAt: '2026-09-19T01:00:00Z',
+        customers: [{
+          id: 'c1',
+          name: 'Cliente',
+          taxId: '12345678909',
+          active: true,
+          updatedAt: '2026-09-19T01:00:00Z'
+        }],
+        products: [{
+          id: 'p1',
+          name: 'Produto',
+          sku: 'P1',
+          active: true,
+          price: 10,
+          stock: 5,
+          updatedAt: '2026-09-19T01:00:00Z'
+        }],
+        settings: {
+          allowSaleWithoutStock: false,
+          accountBlocked: false
+        }
+      }
+    }), { status: 200 })));
+
+    const gateway = new HttpOrisGateway(config);
+    const snapshot = await gateway.fetchCommercialSnapshot({
+      companyId: 'company',
+      userId: 'user',
+      scopeKey: 'device:user:company',
+      token: 'token'
+    });
+
+    expect(snapshot.customers[0]).toMatchObject({
+      scopeKey: 'device:user:company',
+      pendingSync: false
+    });
+    expect(snapshot.products[0].scopeKey).toBe('device:user:company');
+  });
+
 });
