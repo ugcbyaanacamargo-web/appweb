@@ -212,7 +212,13 @@ export function App() {
     }
 
     const deviceId = getOrCreateDeviceId(localStorage);
-    const scopeKey = makeScopeKey({ deviceId, userId: sessionAuth.user.id, companyId });
+    const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
+    const scopeKey = makeScopeKey({
+      deviceId,
+      userId: sessionAuth.user.id,
+      companyId,
+      realm
+    });
     const gatewayContext: GatewayContext = {
       companyId,
       userId: sessionAuth.user.id,
