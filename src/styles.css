@@ -347,3 +347,74 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* Complete integration and online-flow states */
+.landing-config-button {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255,255,255,.78);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  cursor: pointer;
+}
+.integration-screen { align-items: start; overflow: auto; }
+.integration-card { width: min(100%, 760px); margin-block: 10px; }
+.integration-card .section-heading h1 { margin-bottom: 0; }
+.integration-explainer { background: #f6faf8; border-color: #cfe8de; }
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #e7e9eb;
+}
+.mode-option {
+  min-height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #60656c;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.mode-option.active { background: #fff; color: var(--ink); box-shadow: 0 4px 14px rgba(17,19,24,.07); }
+.endpoint-grid { display: grid; gap: 12px; }
+.field small, .endpoint-field small { color: var(--muted); font-weight: 500; line-height: 1.45; }
+.validation-summary, .integration-result {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.validation-summary { background: #fff7ed; border: 1px solid #fed7aa; color: #8a4515; }
+.integration-result.success { background: #e6f6f0; border: 1px solid #b9e3d3; color: #155b47; }
+.integration-result.error, .error-card { background: #fff0ee; border-color: #f5c2bc; color: #7a271f; }
+.warning-card { background: #fff7ed; border-color: #fed7aa; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric-card {
+  min-height: 110px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+}
+.metric-card span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.metric-card strong { font-size: 20px; letter-spacing: -.03em; }
+.metric-card small { color: #176b52; font-weight: 800; }
+
+@media (min-width: 700px) {
+  .endpoint-grid { grid-template-columns: 1fr 1fr; }
+  .metric-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
