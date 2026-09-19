@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   CommercialSnapshot,
   Customer,
+  CustomerFieldDefinition,
   Mission,
   Product,
   SalesDocument
@@ -21,6 +22,7 @@ export interface ContextRecord {
   helpEmail?: string;
   onlineBaseUrl?: string;
   missionPushPublicKey?: string;
+  customerFields?: CustomerFieldDefinition[];
 }
 
 export class OrisDb extends Dexie {
@@ -145,7 +147,8 @@ export async function replaceCommercialSnapshot(
         helpPhone: snapshot.settings.helpPhone,
         helpEmail: snapshot.settings.helpEmail,
         onlineBaseUrl: snapshot.settings.onlineBaseUrl,
-        missionPushPublicKey: snapshot.settings.missionPushPublicKey
+        missionPushPublicKey: snapshot.settings.missionPushPublicKey,
+        customerFields: snapshot.settings.customerFields
       });
     }
   );
