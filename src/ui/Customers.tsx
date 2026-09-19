@@ -21,6 +21,8 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
   const [taxId, setTaxId] = useState('');
+  const [extraFields, setExtraFields] = useState<Record<string, string>>({});
+  const fieldDefinitions = runtime.context.customerFields ?? [];
 
   const reload = async () => {
     setCustomers((await getScopeCustomers(runtime.db, runtime.scopeKey)).sort((a, b) => a.name.localeCompare(b.name)));
@@ -33,9 +35,11 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return customers;
+    const normalizedNeedle = normalizeTaxId(needle);
     return customers.filter(customer =>
       customer.name.toLowerCase().includes(needle) ||
-      normalizeTaxId(customer.taxId).includes(normalizeTaxId(needle))
+      normalizeTaxId(customer.taxId).includes(normalizedNeedle) ||
+      Object.values(customer.extraFields ?? {}).some(value => value.toLowerCase().includes(needle))
     );
   }, [customers, query]);
 
@@ -44,6 +48,7 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
     setCreating(true);
     setName('');
     setTaxId('');
+    setExtraFields({});
   };
 
   const openEdit = (customer: Customer) => {
@@ -51,6 +56,7 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
     setCreating(false);
     setName(customer.name);
     setTaxId(customer.taxId);
+    setExtraFields({ ...(customer.extraFields ?? {}) });
   };
 
   const save = async () => {
@@ -59,6 +65,13 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
       runtime.notify('Informe nome e CPF/CNPJ.', 'warning');
       return;
     }
+
+    const missingRequired = fieldDefinitions.find(field => field.required && !extraFields[field.key]?.trim());
+    if (missingRequired) {
+      runtime.notify('Preencha o campo obrigatório: ' + missingRequired.label + '.', 'warning');
+      return;
+    }
+
     const duplicate = customers.find(customer =>
       customer.id !== editing?.id && normalizeTaxId(customer.taxId) === normalized
     );
@@ -67,14 +80,29 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
       return;
     }
 
+    const allowedExtraFields = fieldDefinitions.length
+      ? Object.fromEntries(fieldDefinitions.map(field => [
+          field.key,
+          (extraFields[field.key] ?? '').trim().slice(0, field.maxLength ?? Number.MAX_SAFE_INTEGER)
+        ]))
+      : editing?.extraFields;
+
     const now = new Date().toISOString();
     const customer: Customer = editing
-      ? { ...editing, name: name.trim(), taxId: taxId.trim(), pendingSync: true, updatedAt: now }
+      ? {
+          ...editing,
+          name: name.trim(),
+          taxId: taxId.trim(),
+          extraFields: allowedExtraFields,
+          pendingSync: true,
+          updatedAt: now
+        }
       : {
           id: crypto.randomUUID(),
           scopeKey: runtime.scopeKey,
           name: name.trim(),
           taxId: taxId.trim(),
+          extraFields: allowedExtraFields,
           active: true,
           pendingSync: true,
           updatedAt: now
@@ -83,6 +111,7 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
     await runtime.db.customers.put(customer);
     setEditing(null);
     setCreating(false);
+    setExtraFields({});
     runtime.notify('Cliente salvo neste aparelho.', 'success');
     await reload();
     await runtime.refreshLocal();
@@ -114,15 +143,36 @@ export function CustomerList({ selectionMode = false, onSelect, showEditor = tru
             </div>
             <button className="text-button" onClick={() => { setEditing(null); setCreating(false); }}>Cancelar</button>
           </div>
-          <label className="field">
-            <span>Nome</span>
-            <input className="input" value={name} onChange={event => setName(event.target.value)} />
-          </label>
-          <label className="field">
-            <span>CPF/CNPJ</span>
-            <input className="input" inputMode="numeric" value={taxId} onChange={event => setTaxId(event.target.value)} />
-          </label>
-          <p className="field-note">O cliente fica disponível imediatamente para venda offline. A sincronização oficial ocorrerá quando permitido pela regra do fluxo.</p>
+
+          <div className="form-grid">
+            <label className="field">
+              <span>Nome</span>
+              <input className="input" value={name} onChange={event => setName(event.target.value)} />
+            </label>
+            <label className="field">
+              <span>CPF/CNPJ</span>
+              <input className="input" inputMode="numeric" value={taxId} onChange={event => setTaxId(event.target.value)} />
+            </label>
+
+            {fieldDefinitions.map(field => (
+              <label className="field" key={field.key}>
+                <span>{field.label}{field.required ? ' *' : ''}</span>
+                <input
+                  className="input"
+                  aria-label={field.label}
+                  type={field.type}
+                  required={field.required}
+                  maxLength={field.type === 'number' ? undefined : field.maxLength}
+                  value={extraFields[field.key] ?? ''}
+                  onChange={event => setExtraFields(current => ({ ...current, [field.key]: event.target.value }))}
+                />
+              </label>
+            ))}
+          </div>
+
+          <p className="field-note">
+            Nome e CPF/CNPJ são a base fixa. Os demais campos são definidos centralmente pelo backend e ficam disponíveis offline depois da sincronização.
+          </p>
           <button className="button primary" onClick={save}>SALVAR CLIENTE</button>
         </div>
       )}

@@ -43,6 +43,14 @@ class SyncGateway implements OrisGateway {
   async fetchMissions(_context: GatewayContext): Promise<Mission[]> { return []; }
   async sendMissionReturn(_context: GatewayContext, _mission: Mission): Promise<void> {}
   async sendLocation(): Promise<void> {}
+
+  async requestPasswordReset(): Promise<void> {}
+  async fetchSellerReport() {
+    return { periodLabel: 'unused', ordersCount: 0, quotesCount: 0, grossSales: 0, commissionPercent: 0, commissionValue: 0 };
+  }
+  async createOnlineSession() { return { available: false }; }
+  async fetchWhatsappIntegrationStatus() { return { available: false, connected: false }; }
+  async registerMissionPushSubscription(): Promise<void> {}
 }
 
 let db: OrisDb | undefined;

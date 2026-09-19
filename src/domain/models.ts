@@ -5,6 +5,17 @@ export interface Scope {
   deviceId: string;
   userId: string;
   companyId: string;
+  realm?: string;
+}
+
+export type CustomerFieldType = 'text' | 'email' | 'tel' | 'number' | 'date';
+
+export interface CustomerFieldDefinition {
+  key: string;
+  label: string;
+  type: CustomerFieldType;
+  required?: boolean;
+  maxLength?: number;
 }
 
 export interface Customer {
@@ -13,6 +24,7 @@ export interface Customer {
   scopeKey: string;
   name: string;
   taxId: string;
+  extraFields?: Record<string, string>;
   active: boolean;
   pendingSync: boolean;
   updatedAt: string;
@@ -68,6 +80,8 @@ export interface CommercialSettings {
   helpPhone?: string;
   helpEmail?: string;
   onlineBaseUrl?: string;
+  missionPushPublicKey?: string;
+  customerFields?: CustomerFieldDefinition[];
 }
 
 export interface CommercialSnapshot {
@@ -114,4 +128,35 @@ export interface SendDocumentResult {
   officialNumber: string;
   acceptedItems: DocumentItem[];
   sentAt: string;
+}
+
+export interface SellerReport {
+  periodLabel: string;
+  ordersCount: number;
+  quotesCount: number;
+  grossSales: number;
+  commissionPercent: number;
+  commissionValue: number;
+}
+
+export interface OnlineSessionResult {
+  available: boolean;
+  url?: string;
+  message?: string;
+}
+
+export interface WhatsappIntegrationStatus {
+  available: boolean;
+  connected: boolean;
+  managementUrl?: string;
+  message?: string;
+}
+
+export interface PushSubscriptionPayload {
+  endpoint: string;
+  expirationTime?: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
 }

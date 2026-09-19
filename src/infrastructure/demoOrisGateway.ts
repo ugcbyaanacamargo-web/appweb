@@ -3,11 +3,16 @@ import type {
   CommercialSnapshot,
   CompanyRef,
   Customer,
+  CustomerFieldDefinition,
   Mission,
+  OnlineSessionResult,
   Product,
+  PushSubscriptionPayload,
   SalesDocument,
+  SellerReport,
   SendDocumentResult,
-  UserIdentity
+  UserIdentity,
+  WhatsappIntegrationStatus
 } from '../domain/models';
 import {
   GatewayError,
@@ -28,12 +33,14 @@ interface DemoAccount {
   user: UserIdentity;
   companyIds: string[];
   trialEndsAt?: string;
+  commissionPercent: number;
 }
 
 interface ServerCustomer {
   id: string;
   name: string;
   taxId: string;
+  extraFields?: Record<string, string>;
   active: boolean;
   updatedAt: string;
 }
@@ -57,6 +64,7 @@ interface DemoCompany {
   name: string;
   blocked: boolean;
   allowSaleWithoutStock: boolean;
+  customerFields: CustomerFieldDefinition[];
   documentSequence: number;
   customers: ServerCustomer[];
   products: ServerProduct[];
@@ -86,6 +94,12 @@ interface DemoState {
 }
 
 const STORAGE_KEY = 'oris360.demoServer.v1';
+
+const DEMO_CUSTOMER_FIELDS: CustomerFieldDefinition[] = [
+  { key: 'phone', label: 'Telefone', type: 'tel' },
+  { key: 'email', label: 'E-mail', type: 'email' },
+  { key: 'address', label: 'Endereço', type: 'text', maxLength: 160 }
+];
 
 function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
@@ -148,7 +162,8 @@ export class DemoOrisGateway implements OrisGateway {
         email: DEMO_CREDENTIALS.email,
         passwordHash: await hash(DEMO_CREDENTIALS.email + ':' + DEMO_CREDENTIALS.password),
         user,
-        companyIds: ['demo-company-a', 'demo-company-b']
+        companyIds: ['demo-company-a', 'demo-company-b'],
+        commissionPercent: 5
       }],
       companies: [
         {
@@ -156,9 +171,17 @@ export class DemoOrisGateway implements OrisGateway {
           name: 'Óris Demo Distribuidora',
           blocked: false,
           allowSaleWithoutStock: false,
+          customerFields: DEMO_CUSTOMER_FIELDS,
           documentSequence: 1000,
           customers: [
-            { id: 'cust-a1', name: 'Mercado Central Demo', taxId: '12.345.678/0001-90', active: true, updatedAt: seededAt },
+            {
+              id: 'cust-a1',
+              name: 'Mercado Central Demo',
+              taxId: '12.345.678/0001-90',
+              extraFields: { phone: '62999990000', email: 'contato@demo.invalid', address: 'Endereço demonstrativo' },
+              active: true,
+              updatedAt: seededAt
+            },
             { id: 'cust-a2', name: 'Cliente Inativo Demo', taxId: '111.222.333-44', active: false, updatedAt: seededAt }
           ],
           products: [
@@ -186,6 +209,7 @@ export class DemoOrisGateway implements OrisGateway {
           name: 'Óris Demo Atacado',
           blocked: false,
           allowSaleWithoutStock: true,
+          customerFields: DEMO_CUSTOMER_FIELDS,
           documentSequence: 2000,
           customers: [
             { id: 'cust-b1', name: 'Loja Norte Demo', taxId: '98.765.432/0001-10', active: true, updatedAt: seededAt }
@@ -251,13 +275,15 @@ export class DemoOrisGateway implements OrisGateway {
       passwordHash: await hash(email + ':' + input.password),
       user,
       companyIds: [companyId],
-      trialEndsAt: plusDaysIso(7)
+      trialEndsAt: plusDaysIso(7),
+      commissionPercent: 0
     });
     state.companies.push({
       id: companyId,
       name: 'Minha empresa Óris360°',
       blocked: false,
       allowSaleWithoutStock: false,
+      customerFields: DEMO_CUSTOMER_FIELDS,
       documentSequence: 1,
       customers: [],
       products: [],
@@ -273,6 +299,10 @@ export class DemoOrisGateway implements OrisGateway {
       companies: [{ id: companyId, name: 'Minha empresa Óris360°' }],
       token: 'demo-session:' + userId
     };
+  }
+
+  async requestPasswordReset(_input: { email: string }): Promise<void> {
+    // DEMO intentionally returns a generic success to model an anti-enumeration reset flow.
   }
 
   async upsertCustomer(context: GatewayContext, customer: Customer): Promise<Customer> {
@@ -293,6 +323,7 @@ export class DemoOrisGateway implements OrisGateway {
       if (localIsNewer) {
         existing.name = customer.name;
         existing.taxId = customer.taxId;
+        existing.extraFields = { ...(customer.extraFields ?? {}) };
         // Active/inactive status is controlled only by the Sistema Online.
         existing.updatedAt = customer.updatedAt;
         this.write(state);
@@ -305,6 +336,7 @@ export class DemoOrisGateway implements OrisGateway {
         scopeKey: context.scopeKey,
         name: existing.name,
         taxId: existing.taxId,
+        extraFields: { ...(existing.extraFields ?? {}) },
         active: existing.active,
         pendingSync: false,
         updatedAt: existing.updatedAt
@@ -316,6 +348,7 @@ export class DemoOrisGateway implements OrisGateway {
       id,
       name: customer.name,
       taxId: customer.taxId,
+      extraFields: { ...(customer.extraFields ?? {}) },
       active: true,
       updatedAt
     });
@@ -353,7 +386,8 @@ export class DemoOrisGateway implements OrisGateway {
       })),
       settings: {
         allowSaleWithoutStock: company.allowSaleWithoutStock,
-        accountBlocked: company.blocked
+        accountBlocked: company.blocked,
+        customerFields: company.customerFields
       }
     };
   }
@@ -444,6 +478,53 @@ export class DemoOrisGateway implements OrisGateway {
     company.locations.push({ userId: context.userId, ...position });
     company.locations = company.locations.slice(-100);
     this.write(state);
+  }
+
+  async fetchSellerReport(context: GatewayContext): Promise<SellerReport> {
+    const state = await this.state();
+    const company = this.company(state, context.companyId);
+    const account = state.accounts.find(item => item.user.id === context.userId);
+    const sellerDocuments = company.centralDocuments.filter(item => item.sellerId === context.userId);
+    const orders = sellerDocuments.filter(item => item.kind === 'order');
+    const quotes = sellerDocuments.filter(item => item.kind === 'quote');
+    const grossSales = orders.reduce(
+      (sum, document) => sum + document.items.reduce(
+        (documentSum, item) => documentSum + item.quantity * item.unitPrice,
+        0
+      ),
+      0
+    );
+    const commissionPercent = account?.commissionPercent ?? 0;
+    return {
+      periodLabel: 'Dados do ambiente DEMO',
+      ordersCount: orders.length,
+      quotesCount: quotes.length,
+      grossSales,
+      commissionPercent,
+      commissionValue: grossSales * commissionPercent / 100
+    };
+  }
+
+  async createOnlineSession(_context: GatewayContext): Promise<OnlineSessionResult> {
+    return {
+      available: false,
+      message: 'O ambiente DEMO não possui uma plataforma web externa para abrir.'
+    };
+  }
+
+  async fetchWhatsappIntegrationStatus(_context: GatewayContext): Promise<WhatsappIntegrationStatus> {
+    return {
+      available: false,
+      connected: false,
+      message: 'A integração WhatsApp/IA exige o backend real Óris360°.'
+    };
+  }
+
+  async registerMissionPushSubscription(
+    _context: GatewayContext,
+    _subscription: PushSubscriptionPayload
+  ): Promise<void> {
+    // No server-side push channel exists in DEMO mode.
   }
 
   async setCompanyBlockedForDemo(companyId: string, blocked: boolean): Promise<void> {

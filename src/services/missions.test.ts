@@ -17,6 +17,14 @@ class MissionGateway implements OrisGateway {
   async fetchMissions():Promise<Mission[]>{return [];}
   async sendMissionReturn():Promise<void>{this.returns++;}
   async sendLocation():Promise<void>{}
+
+  async requestPasswordReset(): Promise<void> {}
+  async fetchSellerReport() {
+    return { periodLabel: 'unused', ordersCount: 0, quotesCount: 0, grossSales: 0, commissionPercent: 0, commissionValue: 0 };
+  }
+  async createOnlineSession() { return { available: false }; }
+  async fetchWhatsappIntegrationStatus() { return { available: false, connected: false }; }
+  async registerMissionPushSubscription(): Promise<void> {}
 }
 
 let db:OrisDb|undefined;

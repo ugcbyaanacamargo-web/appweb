@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   CommercialSnapshot,
   Customer,
+  CustomerFieldDefinition,
   Mission,
   Product,
   SalesDocument
@@ -20,6 +21,58 @@ export interface ContextRecord {
   helpPhone?: string;
   helpEmail?: string;
   onlineBaseUrl?: string;
+  missionPushPublicKey?: string;
+  customerFields?: CustomerFieldDefinition[];
+}
+
+const CUSTOMER_FIELD_TYPES = new Set<CustomerFieldDefinition['type']>([
+  'text',
+  'email',
+  'tel',
+  'number',
+  'date'
+]);
+
+function sanitizeCustomerFieldDefinitions(
+  value: CustomerFieldDefinition[] | undefined
+): CustomerFieldDefinition[] | undefined {
+  if (!value) return undefined;
+
+  const seen = new Set<string>();
+  const result: CustomerFieldDefinition[] = [];
+  for (const field of value) {
+    const key = typeof field?.key === 'string' ? field.key.trim() : '';
+    const label = typeof field?.label === 'string' ? field.label.trim() : '';
+    if (!/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(key)) continue;
+    if (!label || label.length > 80 || seen.has(key)) continue;
+    if (!CUSTOMER_FIELD_TYPES.has(field.type)) continue;
+
+    seen.add(key);
+    result.push({
+      key,
+      label,
+      type: field.type,
+      required: field.required === true || undefined,
+      maxLength:
+        typeof field.maxLength === 'number' && Number.isFinite(field.maxLength)
+          ? Math.max(1, Math.min(500, Math.floor(field.maxLength)))
+          : undefined
+    });
+  }
+  return result;
+}
+
+function sanitizeCustomerExtraFields(
+  value: Record<string, string> | undefined,
+  allowedKeys?: Set<string>
+): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const entries = Object.entries(value).filter(([key, fieldValue]) =>
+    /^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(key) &&
+    typeof fieldValue === 'string' &&
+    (!allowedKeys || allowedKeys.has(key))
+  );
+  return entries.length ? Object.fromEntries(entries) : undefined;
 }
 
 export class OrisDb extends Dexie {
@@ -87,21 +140,28 @@ export async function replaceCommercialSnapshot(
       );
       const matchedLocalIds = new Set<string>();
 
+      const customerFields = sanitizeCustomerFieldDefinitions(snapshot.settings.customerFields);
+      const allowedExtraKeys = customerFields ? new Set(customerFields.map(field => field.key)) : undefined;
+
       const customers = snapshot.customers.map(serverCustomer => {
-        const taxId = normalizeTaxId(serverCustomer.taxId);
+        const sanitizedServerCustomer = {
+          ...serverCustomer,
+          extraFields: sanitizeCustomerExtraFields(serverCustomer.extraFields, allowedExtraKeys)
+        };
+        const taxId = normalizeTaxId(sanitizedServerCustomer.taxId);
         const local = taxId ? localByTaxId.get(taxId) : undefined;
         if (local) {
           matchedLocalIds.add(local.id);
           return {
-            ...serverCustomer,
+            ...sanitizedServerCustomer,
             id: local.id,
-            officialId: serverCustomer.officialId ?? local.officialId ?? serverCustomer.id,
+            officialId: sanitizedServerCustomer.officialId ?? local.officialId ?? sanitizedServerCustomer.id,
             scopeKey,
             pendingSync: false
           };
         }
         return {
-          ...serverCustomer,
+          ...sanitizedServerCustomer,
           scopeKey,
           pendingSync: false
         };
@@ -109,7 +169,10 @@ export async function replaceCommercialSnapshot(
 
       for (const local of previousCustomers) {
         if (local.pendingSync && !matchedLocalIds.has(local.id)) {
-          customers.push(local);
+          customers.push({
+            ...local,
+            extraFields: sanitizeCustomerExtraFields(local.extraFields, allowedExtraKeys)
+          });
         }
       }
 
@@ -143,7 +206,9 @@ export async function replaceCommercialSnapshot(
         allowSaleWithoutStock: snapshot.settings.allowSaleWithoutStock,
         helpPhone: snapshot.settings.helpPhone,
         helpEmail: snapshot.settings.helpEmail,
-        onlineBaseUrl: snapshot.settings.onlineBaseUrl
+        onlineBaseUrl: snapshot.settings.onlineBaseUrl,
+        missionPushPublicKey: snapshot.settings.missionPushPublicKey,
+        customerFields
       });
     }
   );

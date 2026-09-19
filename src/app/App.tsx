@@ -4,6 +4,7 @@ import { OrisDb, type ContextRecord } from '../infrastructure/db';
 import { DEMO_CREDENTIALS } from '../infrastructure/demoOrisGateway';
 import { createOrisGateway } from '../infrastructure/gatewayFactory';
 import { readOnline, subscribeConnectivity } from '../infrastructure/connectivity';
+import { subscribeMissionPush, unsubscribeMissionPush } from '../infrastructure/push';
 import { getOrCreateDeviceId, makeScopeKey } from '../infrastructure/scope';
 import type { GatewayContext } from '../infrastructure/orisGateway';
 import { synchronizeCommercialBase } from '../services/sync';
@@ -24,9 +25,12 @@ import { Products } from '../ui/Products';
 import { Missions } from '../ui/Missions';
 import { Help, OnlineSystem, Reports, WhatsappAI } from '../ui/OnlinePages';
 import { QuoteEditor } from '../ui/QuoteEditor';
+import { IntegrationSetup } from '../ui/IntegrationSetup';
+import { integrationRealm, integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
+import { ForgotPassword } from '../ui/ForgotPassword';
 import type { MainPage } from '../ui/menu';
 
-type Stage = 'landing' | 'login' | 'register' | 'companies' | 'app';
+type Stage = 'landing' | 'login' | 'register' | 'forgot' | 'integration' | 'companies' | 'app';
 
 interface ActiveRuntime {
   auth: AuthResult;
@@ -64,16 +68,18 @@ function AuthCard({
   online,
   onBack,
   onSubmit,
-  onForgot
+  onForgot,
+  demoMode
 }: {
   mode: 'login' | 'register';
   online: boolean;
   onBack: () => void;
   onSubmit: (email: string, password: string) => Promise<void>;
-  onForgot: () => void;
+  onForgot: (email: string) => void;
+  demoMode: boolean;
 }) {
-  const [email, setEmail] = useState(mode === 'login' ? DEMO_CREDENTIALS.email : '');
-  const [password, setPassword] = useState(mode === 'login' ? DEMO_CREDENTIALS.password : '');
+  const [email, setEmail] = useState(mode === 'login' && demoMode ? DEMO_CREDENTIALS.email : '');
+  const [password, setPassword] = useState(mode === 'login' && demoMode ? DEMO_CREDENTIALS.password : '');
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -127,13 +133,13 @@ function AuthCard({
           {busy ? 'PROCESSANDO…' : mode === 'login' ? 'ENTRAR' : 'CRIAR UMA CONTA'}
         </button>
         <button className="button secondary" onClick={onBack}>VOLTAR</button>
-        {mode === 'login' && <button className="text-button centered" onClick={onForgot}>Esqueci a senha</button>}
+        {mode === 'login' && <button className="text-button centered" onClick={() => onForgot(email)}>Esqueci a senha</button>}
 
         <p className="privacy-note">
           Dados comerciais necessários ficam armazenados localmente neste aparelho para permitir a operação offline.
         </p>
 
-        {mode === 'login' && (
+        {mode === 'login' && demoMode && (
           <div className="demo-credentials">
             <span className="eyebrow">MODO DEMONSTRAÇÃO</span>
             <code>{DEMO_CREDENTIALS.email}</code>
@@ -156,6 +162,7 @@ export function App() {
   const [revision, setRevision] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [locationTracking, setLocationTracking] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
   const noticeTimer = useRef<number | null>(null);
   const syncInFlight = useRef(false);
   const lastLocationSentAt = useRef(0);
@@ -205,7 +212,13 @@ export function App() {
     }
 
     const deviceId = getOrCreateDeviceId(localStorage);
-    const scopeKey = makeScopeKey({ deviceId, userId: sessionAuth.user.id, companyId });
+    const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
+    const scopeKey = makeScopeKey({
+      deviceId,
+      userId: sessionAuth.user.id,
+      companyId,
+      realm
+    });
     const gatewayContext: GatewayContext = {
       companyId,
       userId: sessionAuth.user.id,
@@ -253,12 +266,31 @@ export function App() {
     setAuth(sessionAuth);
     setActive(runtime);
     setStage('app');
-    setPage('orders');
+    const requestedPage = new URLSearchParams(window.location.search).get('open') === 'missions'
+      ? 'missions'
+      : 'orders';
+    setPage(requestedPage);
+    if (requestedPage === 'missions') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+    }
     setDocumentId(null);
     setMenuOpen(true);
     saveLiveSession(sessionStorage, { auth: sessionAuth, activeCompanyId: companyId });
 
     if (readOnline()) {
+      if (
+        context.missionPushPublicKey &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        try {
+          const subscription = await subscribeMissionPush(context.missionPushPublicKey);
+          await gateway.registerMissionPushSubscription(gatewayContext, subscription);
+        } catch {
+          // Push é auxiliar; uma falha de registro não bloqueia a operação comercial.
+        }
+      }
+
       try {
         const missions = await gateway.fetchMissions(gatewayContext);
         for (const mission of missions) {
@@ -327,15 +359,16 @@ export function App() {
 
   const handleLogin = async (email: string, password: string) => {
     try {
+      const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
       const result = online
         ? await gateway.authenticate({ email, password })
-        : await verifyOfflineCredentials(localStorage, email, password);
+        : await verifyOfflineCredentials(localStorage, email, password, realm);
 
       if (!result) {
         notify('Login offline indisponível. Faça primeiro um login e sincronização válidos com internet.', 'warning');
         return;
       }
-      if (online) await cacheOfflineCredentials(localStorage, email, password, result);
+      if (online) await cacheOfflineCredentials(localStorage, email, password, result, realm);
       setAuth(result);
 
       if (result.companies.length === 1) {
@@ -356,7 +389,8 @@ export function App() {
     }
     try {
       const result = await gateway.createAccount({ email, password });
-      await cacheOfflineCredentials(localStorage, email, password, result);
+      const realm = integrationRealm(loadIntegrationConfig(integrationStorage()));
+      await cacheOfflineCredentials(localStorage, email, password, result, realm);
       setAuth(result);
       await activateCompany(result, result.companies[0].id);
     } catch (error) {
@@ -432,7 +466,8 @@ export function App() {
     setMenuOpen(false);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await unsubscribeMissionPush(); } catch { /* best effort */ }
     clearLiveSession(sessionStorage);
     setActive(null);
     setAuth(null);
@@ -442,12 +477,26 @@ export function App() {
     notify('Sessão encerrada. Os dados locais foram preservados neste aparelho.', 'info');
   };
 
-  const chooseAnotherCompany = () => {
+  const chooseAnotherCompany = async () => {
     if (!auth) return;
+    try { await unsubscribeMissionPush(); } catch { /* best effort */ }
     setStage('companies');
     setMenuOpen(false);
     setActive(null);
     saveLiveSession(sessionStorage, { auth });
+  };
+
+  const integrationSaved = (message: string) => {
+    void unsubscribeMissionPush().catch(() => undefined);
+    clearLiveSession(sessionStorage);
+    setActive(null);
+    setAuth(null);
+    setPage('orders');
+    setDocumentId(null);
+    setMenuOpen(false);
+    setLocationTracking(false);
+    setStage('landing');
+    notify(message + ' Faça login novamente para iniciar uma sessão compatível com a integração selecionada.', 'success');
   };
 
   const runtimeValue = useMemo(() => active ? {
@@ -477,6 +526,8 @@ export function App() {
     notify
   ]);
 
+  const integrationMode = loadIntegrationConfig(integrationStorage()).mode;
+
   let content: React.ReactNode = null;
   if (stage === 'landing') {
     content = (
@@ -499,17 +550,25 @@ export function App() {
           <div className="landing-actions">
             <button className="button primary" onClick={() => setStage('register')}>CRIAR UMA CONTA</button>
             <button className="button light" onClick={() => setStage('login')}>JÁ TENHO CONTA</button>
+            <button className="landing-config-button" onClick={() => setStage('integration')}>CONFIGURAR INTEGRAÇÃO</button>
           </div>
-          <span className={online ? 'network online invertible' : 'network offline invertible'}>
-            {online ? 'Conectado' : 'Sem internet'}
-          </span>
+          <div className="landing-status-row">
+            <span className={online ? 'network online invertible' : 'network offline invertible'}>
+              {online ? 'Conectado' : 'Sem internet'}
+            </span>
+            <span className="integration-mode-label">{integrationMode === 'demo' ? 'Ambiente DEMO' : 'API real configurada'}</span>
+          </div>
         </div>
       </div>
     );
   } else if (stage === 'login') {
-    content = <AuthCard mode="login" online={online} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={() => notify('Recuperação de senha será conectada à API oficial Óris360°.', 'info')} />;
+    content = <AuthCard mode="login" online={online} demoMode={integrationMode === 'demo'} onBack={() => setStage('landing')} onSubmit={handleLogin} onForgot={email => { setRecoveryEmail(email); setStage('forgot'); }} />;
   } else if (stage === 'register') {
-    content = <AuthCard mode="register" online={online} onBack={() => setStage('landing')} onSubmit={handleRegister} onForgot={() => undefined} />;
+    content = <AuthCard mode="register" online={online} demoMode={integrationMode === 'demo'} onBack={() => setStage('landing')} onSubmit={handleRegister} onForgot={() => undefined} />;
+  } else if (stage === 'forgot') {
+    content = <ForgotPassword gateway={gateway} initialEmail={recoveryEmail} onBack={() => setStage('login')} />;
+  } else if (stage === 'integration') {
+    content = <IntegrationSetup onBack={() => setStage(active ? 'app' : 'landing')} onSaved={integrationSaved} />;
   } else if (stage === 'companies' && auth) {
     content = (
       <div className="auth-screen">
@@ -542,9 +601,9 @@ export function App() {
       page === 'customers' ? <Customers /> :
       page === 'products' ? <Products /> :
       page === 'missions' ? <Missions /> :
-      page === 'whatsapp' ? <WhatsappAI /> :
+      page === 'whatsapp' ? <WhatsappAI onConfigureIntegration={() => setStage('integration')} /> :
       page === 'reports' ? <Reports /> :
-      page === 'online' ? <OnlineSystem /> :
+      page === 'online' ? <OnlineSystem onConfigureIntegration={() => setStage('integration')} /> :
       page === 'help' ? <Help /> :
       documentId ? <QuoteEditor documentId={documentId} onBack={() => { setPage('orders'); setDocumentId(null); }} onOpenDocument={openDocument} /> :
       <Orders onNew={newDocument} onOpen={openDocument} />;

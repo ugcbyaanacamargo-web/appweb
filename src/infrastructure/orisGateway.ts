@@ -3,8 +3,12 @@ import type {
   CommercialSnapshot,
   Customer,
   Mission,
+  OnlineSessionResult,
+  PushSubscriptionPayload,
   SalesDocument,
-  SendDocumentResult
+  SellerReport,
+  SendDocumentResult,
+  WhatsappIntegrationStatus
 } from '../domain/models';
 
 export type GatewayErrorCode =
@@ -37,6 +41,7 @@ export interface AccountInput {
 export interface OrisGateway {
   authenticate(input: AccountInput): Promise<AuthResult>;
   createAccount(input: AccountInput): Promise<AuthResult>;
+  requestPasswordReset(input: { email: string }): Promise<void>;
   upsertCustomer(context: GatewayContext, customer: Customer): Promise<Customer>;
   fetchCommercialSnapshot(context: GatewayContext): Promise<CommercialSnapshot>;
   sendDocument(context: GatewayContext, document: SalesDocument): Promise<SendDocumentResult>;
@@ -45,5 +50,12 @@ export interface OrisGateway {
   sendLocation(
     context: GatewayContext,
     position: { latitude: number; longitude: number; capturedAt: string }
+  ): Promise<void>;
+  fetchSellerReport(context: GatewayContext): Promise<SellerReport>;
+  createOnlineSession(context: GatewayContext): Promise<OnlineSessionResult>;
+  fetchWhatsappIntegrationStatus(context: GatewayContext): Promise<WhatsappIntegrationStatus>;
+  registerMissionPushSubscription(
+    context: GatewayContext,
+    subscription: PushSubscriptionPayload
   ): Promise<void>;
 }

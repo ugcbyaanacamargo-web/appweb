@@ -98,3 +98,110 @@ test('envio explícito bloqueia documento e duplicação cria novo orçamento', 
   await expect(page.getByLabel('Forma de pagamento')).toHaveValue('');
   await expect(page.getByLabel('Condição de pagamento')).toHaveValue('');
 });
+
+
+test('configuração técnica valida a API antes de ativar o modo real', async ({ page }) => {
+  await page.route('https://api.example.test/health', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    body: JSON.stringify({ ok: true })
+  }));
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'CONFIGURAR INTEGRAÇÃO' }).click();
+  await expect(page.getByRole('heading', { name: 'Conectar Óris360°' })).toBeVisible();
+  await page.getByRole('button', { name: 'API REAL' }).click();
+  await page.getByLabel('URL base da API').fill('https://api.example.test');
+
+  const endpoints: Record<string, string> = {
+    'Saúde / teste da API': '/health',
+    'Login': '/login',
+    'Criar conta': '/accounts',
+    'Recuperar senha': '/password-reset',
+    'Base comercial': '/snapshot',
+    'Enviar cliente': '/customers/upsert',
+    'Enviar Pedido/Orçamento': '/documents/send',
+    'Receber Missões': '/missions',
+    'Retorno de Missão': '/missions/return',
+    'Localização operacional': '/location',
+    'Relatórios e Comissões': '/reports/seller',
+    'Login integrado / SSO': '/online/session',
+    'IA no WhatsApp': '/whatsapp/status',
+    'Push de Missões': '/push/subscription'
+  };
+  for (const [label, value] of Object.entries(endpoints)) {
+    await page.getByLabel(label, { exact: true }).fill(value);
+  }
+
+  await page.getByRole('button', { name: 'TESTAR CONEXÃO E SALVAR' }).click();
+  await expect(page.getByText(/API real validada e ativada/)).toBeVisible();
+
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('oris360.integration.v1') || '{}'));
+  expect(saved.mode).toBe('http');
+  expect(saved.baseUrl).toBe('https://api.example.test');
+  await expect(page.getByText('API real configurada')).toBeVisible();
+
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await expect(page.getByText('MODO DEMONSTRAÇÃO')).toHaveCount(0);
+  await expect(page.getByLabel('E-mail')).toHaveValue('');
+});
+
+test('recuperação de senha executa o gateway em vez de exibir placeholder', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await page.getByRole('button', { name: 'Esqueci a senha' }).click();
+  await expect(page.getByRole('heading', { name: 'Esqueci a senha' })).toBeVisible();
+  await page.getByRole('button', { name: 'SOLICITAR RECUPERAÇÃO' }).click();
+  await expect(page.getByText(/Solicitação recebida/)).toBeVisible();
+});
+
+test('relatórios, sistema online e WhatsApp consultam o gateway', async ({ page }) => {
+  await enterDemoCompany(page);
+
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await menu.getByRole('button', { name: 'Relatórios e Comissões', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Relatórios e Comissões' })).toBeVisible();
+  await expect(page.getByText('Dados do ambiente DEMO')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Sistema Online', exact: true }).click();
+  await page.getByRole('button', { name: 'ABRIR SISTEMA ONLINE' }).click();
+  await expect(page.getByText('Integração ainda não disponível')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'CONFIGURAR API' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'IA no WhatsApp', exact: true }).click();
+  await expect(page.getByText('Integração pendente')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'CONFIGURAR API' })).toBeVisible();
+});
+
+
+test('campos de cliente definidos pelo backend funcionam offline e persistem', async ({ page }) => {
+  await enterDemoCompany(page);
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await menu.getByRole('button', { name: 'Clientes', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Novo cliente' }).click();
+  await expect(page.getByLabel('Telefone')).toBeVisible();
+  await expect(page.getByLabel('E-mail', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Endereço')).toBeVisible();
+
+  await page.getByLabel('Nome').fill('Cliente Campos Dinâmicos');
+  await page.getByLabel('CPF/CNPJ').fill('12345678909');
+  await page.getByLabel('Telefone').fill('62988887777');
+  await page.getByLabel('E-mail', { exact: true }).fill('cliente@example.com');
+  await page.getByLabel('Endereço').fill('Rua de teste, 100');
+  await page.getByRole('button', { name: 'SALVAR CLIENTE' }).click();
+  await expect(page.getByText('Cliente salvo neste aparelho.')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: 'Menu principal' })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Clientes', exact: true }).click();
+  await page.getByLabel('Buscar cliente').fill('Cliente Campos Dinâmicos');
+  await page.getByText('Cliente Campos Dinâmicos', { exact: true }).click();
+
+  await expect(page.getByLabel('Telefone')).toHaveValue('62988887777');
+  await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue('cliente@example.com');
+  await expect(page.getByLabel('Endereço')).toHaveValue('Rua de teste, 100');
+});

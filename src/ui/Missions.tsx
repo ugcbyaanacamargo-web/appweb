@@ -3,17 +3,8 @@ import type { Mission } from '../domain/models';
 import { getScopeMissions } from '../infrastructure/db';
 import { completeMissionOffline } from '../services/missions';
 import { useRuntime } from '../app/AppContext';
-
-async function filesToDataUrls(files: FileList | null): Promise<string[]> {
-  if (!files) return [];
-  const selected = Array.from(files).slice(0, 3);
-  return Promise.all(selected.map(file => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  })));
-}
+import { subscribeMissionPush } from '../infrastructure/push';
+import { missionFilesToDataUrls } from '../infrastructure/missionEvidence';
 
 export function Missions() {
   const runtime = useRuntime();
@@ -90,10 +81,32 @@ export function Missions() {
       return;
     }
     const permission = await Notification.requestPermission();
-    runtime.notify(
-      permission === 'granted' ? 'Notificações de novas missões ativadas.' : 'Permissão de notificação não concedida.',
-      permission === 'granted' ? 'success' : 'warning'
-    );
+    if (permission !== 'granted') {
+      runtime.notify('Permissão de notificação não concedida.', 'warning');
+      return;
+    }
+
+    const publicKey = runtime.context.missionPushPublicKey;
+    if (!publicKey) {
+      runtime.notify(
+        'Notificações enquanto o App está aberto estão ativadas. Push em segundo plano depende da chave pública VAPID fornecida pelo backend Óris360°.',
+        'warning'
+      );
+      return;
+    }
+
+    try {
+      const subscription = await subscribeMissionPush(publicKey);
+      await runtime.gateway.registerMissionPushSubscription(runtime.gatewayContext, subscription);
+      runtime.notify('Push de novas Missões ativado para este aparelho.', 'success');
+    } catch (error) {
+      runtime.notify(
+        error instanceof Error && error.message === 'PUSH_NOT_SUPPORTED'
+          ? 'Este navegador não oferece Web Push compatível.'
+          : 'Não foi possível registrar o push de Missões. Verifique a integração da API.',
+        'warning'
+      );
+    }
   };
 
   return (
@@ -148,7 +161,14 @@ export function Missions() {
                   accept="image/*"
                   capture="environment"
                   multiple
-                  onChange={async event => setEvidence(await filesToDataUrls(event.target.files))}
+                  onChange={async event => {
+                    try {
+                      setEvidence(await missionFilesToDataUrls(event.target.files));
+                    } catch (error) {
+                      runtime.notify(error instanceof Error ? error.message : 'Não foi possível adicionar as evidências.', 'warning');
+                      event.target.value = '';
+                    }
+                  }}
                 />
               </label>
               <button className="button secondary" onClick={captureLocation}>

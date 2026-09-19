@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Customer, Product, SalesDocument } from '../domain/models';
-import { OrisDb, getScopeCustomers, getScopeDocuments, getScopeProducts } from './db';
+import { OrisDb, getScopeCustomers, getScopeDocuments, getScopeProducts, replaceCommercialSnapshot } from './db';
 import { makeScopeKey } from './scope';
 
 let db: OrisDb | undefined;
@@ -11,6 +11,7 @@ afterEach(async () => {
     await DexieDelete(db.name);
     db = undefined;
   }
+
 });
 
 async function DexieDelete(name: string) {
@@ -74,4 +75,62 @@ describe('local database isolation', () => {
     expect((await getScopeProducts(db, s1)).map(x => x.scopeKey)).toEqual([s1]);
     expect((await getScopeDocuments(db, s1)).map(x => x.scopeKey)).toEqual([s1]);
   });
+
+  it('persists backend-defined customer fields with the commercial snapshot', async () => {
+    db = new OrisDb('customer-fields-' + crypto.randomUUID());
+    const scopeKey = 'd:u:c';
+    await db.contexts.put({
+      scopeKey,
+      userName: 'User',
+      companyName: 'Company',
+      activatedAt: '2026-09-18T00:00:00Z',
+      accountBlocked: false
+    });
+
+    await replaceCommercialSnapshot(db, scopeKey, {
+      version: 'v2',
+      synchronizedAt: '2026-09-18T12:00:00Z',
+      customers: [{
+        id: 'c1',
+        scopeKey,
+        name: 'Cliente',
+        taxId: '123',
+        active: true,
+        pendingSync: false,
+        updatedAt: '2026-09-18T12:00:00Z',
+        extraFields: { phone: '62999990000' }
+      }],
+      products: [],
+      settings: {
+        allowSaleWithoutStock: false,
+        accountBlocked: false,
+        customerFields: [
+          { key: 'phone', label: 'Telefone', type: 'tel' },
+          { key: 'evil', label: 'Campo inválido', type: 'file' as never }
+        ]
+      }
+    });
+
+    expect((await db.contexts.get(scopeKey))?.customerFields).toEqual([
+      { key: 'phone', label: 'Telefone', type: 'tel' }
+    ]);
+    expect((await db.customers.get([scopeKey, 'c1']))?.extraFields?.phone).toBe('62999990000');
+  });
+
+  it('R14 also isolates identical device/user/company IDs across integration realms', () => {
+    const demo = makeScopeKey({
+      deviceId: 'd1',
+      userId: 'u1',
+      companyId: 'c1',
+      realm: 'demo'
+    });
+    const real = makeScopeKey({
+      deviceId: 'd1',
+      userId: 'u1',
+      companyId: 'c1',
+      realm: 'http:https://api.example.com|/login|/snapshot'
+    });
+    expect(real).not.toBe(demo);
+  });
+
 });
