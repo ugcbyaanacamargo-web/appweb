@@ -1,671 +1,859 @@
-# Óris360° Full Platform — Design
+# Óris360° Sales App + Saboriza — Design de Integração
 
-Data: 2026-09-19
-Status: DIREÇÃO APROVADA PELO PEDIDO DE CONTINUIDADE DE 2026-09-19
-Base: seller PWA atual no main, já com configuração de API, recuperação de senha, relatórios via gateway, sessão online, status do WhatsApp, Web Push, campos dinâmicos de cliente e CI/E2E. A expansão abaixo completa o lado empresarial sem quebrar o App do Vendedor.
+Data: 2026-09-19  
+Status: ESPECIFICAÇÃO PARA REVISÃO DO USUÁRIO  
+Autoridade funcional: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 
-## 1. Problema observado
+## 1. Objetivo
 
-O main atual implementa corretamente o núcleo offline do App do Vendedor, mas não constitui sozinho uma plataforma empresarial completa.
+Adaptar o `appweb` para que o **App de Vendas Mobile Óris360°** continue obedecendo literalmente ao Prompt Mestre e passe a ter como **Sistema Online oficial** o ecossistema Saboriza:
 
-Os sintomas relatados pelo usuário têm uma causa arquitetural comum:
+- App do vendedor: `https://oris360-site.netlify.app/`
+- Sistema Online: `https://saboriza-catalogo.vercel.app/`
+- fonte central de dados/autenticação do Saboriza: Supabase;
+- repositório público identificado do Sistema Online: `Ruanzinn01/Saboriza-Catalogo`.
 
-- não existe uma superfície administrativa real para empresa;
-- OrisGateway atual não expõe operações administrativas;
-- DemoOrisGateway persiste no navegador, portanto não sincroniza aparelhos reais;
-- não há cadastro/gestão central de vendedores;
-- não há CRUD central de produtos/SKU/preço/estoque;
-- não há atribuição central de clientes a vendedores;
-- não há criação/atribuição central de Missões;
-- Relatórios/Comissões já consultam o gateway, mas não existe painel central da empresa;
-- Sistema Online já solicita sessão pelo gateway, mas não existe ainda o painel interno completo nem SSO real externo;
-- IA no WhatsApp já consulta status pelo gateway, mas não existe gerenciamento empresarial nem provedor/webhook/credenciais reais.
+O App permanece offline-first. O Saboriza permanece online e administrativo.
 
-Conclusão: os fluxos técnicos já preparados não devem ser confundidos com produto empresarial completo. A plataforma precisa de uma segunda superfície — Sistema Online / Painel da Empresa — e de um contrato central compartilhado com o App do Vendedor.
+## 2. Regra de autoridade
 
-## 2. Classificação
+Em qualquer conflito:
 
-Mudança arquitetural.
+1. o Prompt Mestre do Óris360° vence para o comportamento do App;
+2. o Saboriza é reutilizado onde já possui funcionalidade compatível;
+3. nenhuma limitação atual do Saboriza pode enfraquecer uma regra-mãe do App;
+4. quando o Saboriza ainda não possui a capacidade exigida, a lacuna é tratada como integração/backend pendente — nunca como motivo para alterar o comportamento definido.
 
-Ela adiciona novos subsistemas e novos contratos que afetam autenticação, modelo de dados, sincronização, permissões, relatórios e integrações externas.
+A especificação canônica do Prompt Mestre não será reescrita nem simplificada.
 
-## 3. Abordagens consideradas
+## 3. O que já existe e será preservado
 
-### A. Manter somente o App do Vendedor e depender de um Sistema Online externo
+### No Óris360° App
+
+O `main` já possui:
+
+- PWA React/TypeScript/Vite;
+- IndexedDB/Dexie;
+- isolamento local por dispositivo + usuário + empresa + ambiente de integração;
+- primeiro acesso online e uso posterior offline;
+- menu fixo de 10 itens;
+- Pedidos com TODOS / NÃO ENVIADOS;
+- Orçamento e Pedido local;
+- SALVAR separado de GERAR PEDIDO e ENVIAR;
+- idempotency key local;
+- bloqueio depois do envio;
+- duplicação como novo Orçamento;
+- clientes offline;
+- sincronização comercial manual/transacional;
+- Missões offline;
+- fluxo de retorno de Missão;
+- Web Push no lado cliente;
+- relatórios/Sistema Online/WhatsApp atrás do gateway;
+- configuração de API genérica;
+- CI, Vitest e Playwright.
+
+Esses comportamentos não serão descartados nem reescritos sem necessidade.
+
+### No Saboriza
+
+O código público analisado já possui:
+
+- Supabase Auth no painel administrativo;
+- painel `/admin`;
+- Produtos;
+- Categorias;
+- Clientes;
+- Fornecedores;
+- Pedidos;
+- Itens de Pedido;
+- Cupons;
+- Indicadores;
+- Configurações;
+- RPCs `create_order` e `update_order_items`;
+- catálogo público/Delivery;
+- checkout.
+
+Portanto, o Óris360° **não** criará um segundo CRUD de produto, cliente ou pedido para a empresa.
+
+## 4. Fronteira definitiva do produto
+
+### Óris360° App — vendedor
+
+Responsável por:
+
+- operação mobile;
+- offline-first;
+- base comercial local;
+- clientes locais/pendentes;
+- Orçamentos/Pedidos locais;
+- envio explícito;
+- Missões do vendedor;
+- localização operacional;
+- relatórios do próprio vendedor;
+- abertura integrada do Sistema Online;
+- Ajuda;
+- IA no WhatsApp em nível previsto.
+
+O menu continua exatamente:
+
+1. Pedidos
+2. Clientes
+3. Produtos
+4. Tarefas / Missões
+5. IA no WhatsApp
+6. Relatórios e Comissões
+7. Sistema Online
+8. Ajuda
+9. Sincronizar
+10. Sair da minha conta
+
+### Saboriza — Sistema Online
+
+Responsável por:
+
+- administração central;
+- produtos;
+- categorias;
+- clientes centrais;
+- pedidos/documentos recebidos;
+- configurações;
+- indicadores;
+- usuários/vendedores quando esse módulo for adicionado;
+- carteira de clientes por vendedor;
+- criação/atribuição de Missões;
+- comissão;
+- mapa da equipe;
+- integrações empresariais.
+
+## 5. Alternativas analisadas
+
+### A. App falar diretamente com todas as tabelas Supabase
+
+Vantagem: menos código de servidor.
+
+Problemas:
+- regras críticas ficariam distribuídas no navegador;
+- idempotência e estoque seriam mais difíceis de proteger;
+- multiempresa e permissões ficariam mais frágeis;
+- segredos de WhatsApp/Push/IA não podem ficar no cliente.
+
+**Não recomendado.**
+
+### B. Manter a tela genérica com URL + 14 endpoints digitados manualmente
+
+Vantagem: funciona com qualquer backend.
+
+Problemas:
+- não corresponde mais à realidade conhecida;
+- é configuração técnica demais para vendedor;
+- mantém o produto genérico quando já sabemos que o backend é Saboriza/Supabase.
+
+**Manter somente como ferramenta de desenvolvimento/diagnóstico, não como experiência normal de produção.**
+
+### C. Gateway específico Saboriza/Supabase atrás de `OrisGateway`
+
+O App usa Supabase Auth e operações seguras via RPC/Edge Functions, mantendo toda regra local já implementada.
 
 Vantagens:
-- menor código no appweb;
-- evita duplicar um ERP já existente.
+- reaproveita o Saboriza;
+- preserva o isolamento do domínio do App;
+- permite transações no banco;
+- permite RLS;
+- mantém segredos server-side;
+- permite Web Push/WhatsApp/SSO em Edge Functions;
+- substitui a integração genérica sem contaminar UI/regra de negócio.
 
-Desvantagens:
-- o produto continua inutilizável sozinho;
-- todos os sintomas relatados permanecem dependentes de uma plataforma que ainda não foi fornecida;
-- não existe lugar para cadastrar vendedor/produto/missão/comissão.
+**DECISÃO: abordagem C.**
 
-### B. Mesmo repositório, duas superfícies, mesmo domínio — RECOMENDADA
+## 6. Estrutura técnica da integração
 
-Superfícies:
-1. App do Vendedor — mobile-first, offline-first, menu fixo atual.
-2. Sistema Online / Painel da Empresa — responsivo/desktop-first, administrativo e online.
+A UI e o domínio do App não acessam Supabase diretamente.
 
-As duas superfícies usam o mesmo domínio e um gateway central. O modo DEMO usa um servidor simulado; a API real substitui somente o adaptador.
+A composição continua em:
 
-Vantagens:
-- produto demonstrável ponta a ponta;
-- regras comerciais ficam em um único lugar;
-- empresa controla vendedor, produto, cliente, missão e comissão;
-- caminho de integração com API real fica explícito;
-- não quebra as 20 regras-mãe do App do Vendedor.
+`src/infrastructure/gatewayFactory.ts`
 
-### C. Criar imediatamente um backend completo próprio
+Nova implementação futura:
 
-Exemplo: Postgres/Supabase + API/Netlify Functions.
+```text
+src/infrastructure/saboriza/
+  saborizaClient.ts
+  SaborizaOrisGateway.ts
+  parsers.ts
+  contracts.ts
+```
 
-Vantagens:
-- sincronização real entre aparelhos desde já.
+Responsabilidades:
 
-Desvantagens:
-- exige conta/credenciais/infraestrutura externa;
-- usuário declarou que conectará a API depois;
-- introduzir um backend arbitrário agora pode conflitar com a futura API Óris360°.
+- `saborizaClient.ts`: cria o cliente Supabase usando somente URL + chave pública;
+- `SaborizaOrisGateway.ts`: traduz os contratos Saboriza para `OrisGateway`;
+- `parsers.ts`: valida respostas externas em runtime;
+- `contracts.ts`: tipos do contrato remoto.
 
-Decisão: implementar a abordagem B. O backend real fica atrás do contrato; quando disponível, ele substitui o demo.
+A lógica de negócio continua em `domain/` e `services/`.
 
-## 4. Superfície 1 — App do Vendedor
+## 7. Configuração de produção
 
-O menu global continua exatamente com os 10 itens definidos na especificação original.
+Configuração pública permitida no frontend:
 
-O vendedor pode:
-- trabalhar offline após primeira base válida;
-- criar/editar clientes permitidos;
-- consultar catálogo/produtos ativos;
-- criar Orçamento/Pedido;
-- salvar localmente;
-- enviar documento explicitamente;
-- receber/executar Missões;
-- consultar seus relatórios quando online;
-- abrir Sistema Online conforme sua permissão;
-- usar IA no WhatsApp quando a integração estiver habilitada.
+```text
+VITE_SABORIZA_SUPABASE_URL
+VITE_SABORIZA_SUPABASE_PUBLISHABLE_KEY
+VITE_SABORIZA_ONLINE_URL=https://saboriza-catalogo.vercel.app
+```
 
-O vendedor não administra produto, preço, estoque, outros vendedores, permissões, comissão de outros vendedores ou definição de Missões para terceiros.
+Nunca no navegador:
 
-## 5. Superfície 2 — Sistema Online / Painel da Empresa
+- secret/service-role key;
+- senha do banco;
+- chave privada VAPID;
+- token WhatsApp;
+- Meta App Secret;
+- chave de IA;
+- segredo de assinatura.
 
-Nova superfície administrativa no mesmo projeto, acessada por usuário autorizado.
+A documentação oficial do Supabase confirma que publishable/anon key pode ser usada no navegador com RLS correta, enquanto secret/service-role deve permanecer em ambiente controlado do servidor.
 
-### Navegação administrativa
+## 8. Autenticação e mesma conta
 
-1. Dashboard
-2. Vendedores e Usuários
-3. Produtos e Estoque
-4. Clientes
-5. Missões
-6. Pedidos e Orçamentos Online
-7. Relatórios e Comissões
-8. Mapa da Equipe
-9. IA no WhatsApp
-10. Configurações / Integrações
+### Login do App
 
-Essa navegação não altera o menu fixo do App do Vendedor.
-
-### Permissões
-
-Papéis mínimos:
-- owner
-- admin
-- manager
-- seller
-
-O backend real deve ser a autoridade de autorização. A UI apenas reflete permissões.
-
-## 6. Vendedores e usuários
-
-O painel deve permitir:
-- criar/convidar vendedor;
-- editar nome/e-mail/dados operacionais;
-- ativar/inativar acesso;
-- definir papel;
-- definir percentual de comissão;
-- vincular uma ou mais empresas;
-- atribuir clientes;
-- atribuir Missões;
-- visualizar indicadores daquele vendedor.
-
-Modelo conceitual:
-User
-Company
-CompanyMembership(userId, companyId, role, active)
-SellerProfile(userId, companyId, commissionPercent)
-
-No modo DEMO, criação de vendedor gera uma credencial de teste apenas para demonstração.
-
-Na API real, senha deve ser tratada pelo provedor de autenticação/backend, nunca pelo admin em texto puro.
-
-## 7. Produtos, SKU, preço e estoque
-
-### Painel da empresa
-
-Deve permitir:
-- criar produto manualmente;
-- SKU obrigatório e único dentro da empresa;
-- buscar produto existente por nome/SKU;
-- editar descrição;
-- ativar/inativar;
-- preço;
-- estoque;
-- unidade;
-- código de barras opcional;
-- imagem opcional.
-
-### Busca por SKU
-
-Existem dois conceitos distintos:
-
-1. Busca interna — procurar SKU já cadastrado na empresa. Será funcional sem integração externa.
-2. Busca externa — digitar um SKU/EAN e obter nome/imagem/dados de um catálogo externo. Isso exige um provedor de catálogo externo e não deve ser inventado.
-
-O App do Vendedor permanece somente leitura para produto.
-
-## 8. Clientes e carteira por vendedor
-
-O painel da empresa enxerga todos os clientes da empresa.
-
-Deve permitir:
-- cadastrar/editar/inativar;
-- pesquisar CPF/CNPJ;
-- atribuir um cliente a um ou vários vendedores;
-- reatribuir carteira;
-- visualizar vendedor responsável.
-
-Regra padrão proposta:
-- cliente criado offline por vendedor fica imediatamente utilizável por ele;
-- quando sincronizado, fica associado ao vendedor que o criou;
-- admin pode alterar a atribuição depois;
-- um cliente pode ser compartilhado com múltiplos vendedores quando a empresa permitir.
-
-Snapshot do vendedor baixa somente a carteira autorizada + clientes criados localmente ainda pendentes.
-
-## 9. Missões
-
-### Painel
-
-Admin/manager pode:
-- criar Missão;
-- título;
-- descrição;
-- prazo;
-- prioridade;
-- vendedor(es) destinatário(s);
-- cliente relacionado opcional;
-- requisitos de evidência;
-- foto obrigatória opcional;
-- localização obrigatória opcional;
-- observação;
-- status;
-- cancelar/reabrir conforme permissão.
-
-### App do vendedor
-
-Recebe somente Missões destinadas a ele.
-
-Estados:
-assigned
-received
-in_progress
-completed_local
-returned
-cancelled
-
-Missão recebida continua executável offline.
-
-Retorno pode subir automaticamente ao recuperar conexão.
-
-## 10. Push de Missões
-
-A PWA já possui service worker. Para push real, o backend precisa armazenar uma PushSubscription do vendedor e enviar Web Push quando uma Missão for atribuída.
-
-O canal de push é exclusivo de eventos autorizados, como Missões. Ele não dispara sincronização comercial automática.
-
-## 11. Sincronizar — significado exato
-
-O botão SINCRONIZAR do App do Vendedor executa somente sincronização comercial manual.
+O App usará Supabase Auth do mesmo projeto do Saboriza.
 
 Fluxo:
-1. verificar internet;
-2. validar conta/empresa;
-3. enviar clientes novos/editados pendentes;
-4. processar cada cliente independentemente;
-5. baixar snapshot comercial autorizado para aquele vendedor:
-   - clientes da carteira;
-   - produtos ativos;
-   - preços;
-   - estoque;
-   - configurações;
-   - regra de venda sem estoque;
-   - contatos de Ajuda;
-6. validar snapshot em staging;
-7. ativar atomicamente;
-8. atualizar última sincronização concluída somente depois do sucesso.
-
-Não faz:
-- não envia Pedido;
-- não envia Orçamento;
-- não baixa histórico central;
-- não baixa documentos de outro aparelho;
-- não é o canal de Missões em tempo real.
-
-## 12. Pedidos/Orçamentos no painel
-
-O Sistema Online pode exibir todos os documentos que chegaram ao servidor, respeitando permissões.
-
-Isso não viola a regra do App: o painel usa a base central; o App do Vendedor continua sem baixar histórico central.
 
-Admin pode:
-- pesquisar por vendedor/cliente/data/status;
-- consultar documento;
-- continuar fluxo de faturamento no backend real;
-- visualizar origem/aparelho/idempotency key quando necessário para suporte.
-
-## 13. Relatórios e comissões
-
-Fonte de verdade: documentos centrais confirmados.
-
-Painel:
-- vendas por vendedor;
-- quantidade de pedidos;
-- ticket médio;
-- comissão calculada;
-- filtros de período;
-- status de pagamento da comissão quando o backend suportar.
-
-Vendedor:
-- somente os próprios números.
-
-Cálculo inicial:
-commission = eligibleSalesAmount * sellerCommissionPercent / 100
-
-A definição de eligibleSalesAmount deve vir do backend real. O frontend não deve inventar se comissão nasce em pedido enviado, faturado ou pago.
-
-## 14. Sistema Online e login integrado
-
-### Quando painel e App usam a mesma origem
-
-Recomendado para a primeira versão:
-- o botão Sistema Online abre a rota administrativa/online do próprio projeto;
-- reaproveita a sessão atual;
-- nenhuma senha é digitada novamente;
-- backend valida papel e empresa ativa.
-
-### Quando Sistema Online está em outro domínio
-
-Exigir endpoint de SSO:
-1. App autenticado solicita código SSO curto e de uso único;
-2. backend gera código com expiração curta, usuário e empresa;
-3. navegador abre Sistema Online com o código;
-4. Sistema Online troca o código por sua própria sessão;
-5. código não pode ser reutilizado.
-
-Não colocar access token persistente em query string.
-
-## 15. IA no WhatsApp
-
-A tela deixa de ser placeholder e vira área de integração/configuração.
-
-### O que o painel precisa administrar
-
-- status da conexão;
-- número conectado;
-- identidade da empresa;
-- ativar/desativar IA;
-- horário de atendimento;
-- mensagem de fallback;
-- quais capacidades a IA pode usar.
-
-### Integrações externas necessárias
-
-Para produção são necessários:
-
-WhatsApp Business Platform ou provedor BSP:
-- conta Meta Business;
-- WhatsApp Business Account (WABA);
-- Phone Number ID;
-- credencial/token de servidor;
-- App Secret;
-- webhook público HTTPS;
-- verify token de webhook;
-- assinatura/validação das notificações.
-
-Provedor de IA:
-- API key do provedor escolhido;
-- modelo/configuração;
-- política de custo/limite.
-
-Segredos ficam somente no backend/deploy, nunca no navegador.
-
-### Ferramentas da IA
-
-A IA pode receber ferramentas server-side com permissões explícitas:
-- consultar produto/preço/estoque;
-- localizar cliente;
-- consultar status de pedido;
-- criar lead;
-- preparar orçamento;
-- encaminhar para humano.
-
-Ações de alto impacto devem exigir confirmação/política do backend.
-
-## 16. Mapa da Equipe
-
-Painel mostra última localização operacional conhecida de vendedores autorizados.
-
-Backend recebe:
-- sellerId;
-- companyId;
-- latitude/longitude;
-- capturedAt;
-- accuracy opcional.
-
-Regras:
-- consentimento/permissão do dispositivo;
-- online;
-- retenção definida pela empresa;
-- nenhum rastreamento offline em tempo real;
-- limitações de background da PWA permanecem.
-
-## 17. Gateway da plataforma
-
-O OrisGateway atual é estreito demais para o novo escopo.
-
-A evolução recomendada é um façade composto:
-
-OrisPlatformGateway
-- auth
-- mobileSales
-- admin
-- missions
-- reporting
-- integrations
-
-Interfaces independentes evitam um arquivo monolítico.
-
-AuthGateway:
-- authenticate
-- createAccount
-- refresh/logout
-- list memberships
-- create SSO exchange
-
-MobileSalesGateway:
-- upsertCustomer
-- fetchCommercialSnapshot
-- sendDocument
-
-AdminGateway:
-- users/sellers CRUD
-- product CRUD
-- stock/price update
-- customers CRUD
-- customer assignments
-- company settings
-
-MissionGateway:
-- mission CRUD
-- assignments
-- fetch seller missions
-- return evidence
-- push subscriptions
-
-ReportingGateway:
-- seller report
-- company report
-- commissions
-
-IntegrationGateway:
-- WhatsApp connection status/configuration
-- help contacts
-- external catalog lookup when configured
-
-## 18. Backend DEMO vs backend real
-
-DEMO continua existindo para testes, desenvolvimento e demonstração ponta a ponta. Ele será ampliado para representar empresa, vendedores, produtos, atribuições, missões e relatórios no mesmo navegador.
-
-Backend real é obrigatório para:
-- sincronização entre dispositivos;
-- vendedores diferentes;
-- dados compartilhados da empresa;
-- Web Push real;
-- WhatsApp webhook;
-- SSO entre domínios;
-- segredos;
-- relatórios centrais.
-
-## 19. Onde conectar a API real
-
-Ponto de composição:
-src/infrastructure/gatewayFactory.ts
-
-Implementação prevista:
-src/infrastructure/http/httpClient.ts
-src/infrastructure/http/httpAuthGateway.ts
-src/infrastructure/http/httpMobileSalesGateway.ts
-src/infrastructure/http/httpAdminGateway.ts
-src/infrastructure/http/httpMissionGateway.ts
-src/infrastructure/http/httpReportingGateway.ts
-src/infrastructure/http/httpIntegrationGateway.ts
-
-Configuração pública:
-VITE_ORIS_API_BASE_URL=https://api.seudominio.com
-
-Essa URL pode ficar no bundle.
-
-Nunca colocar em VITE_*:
-- database password;
-- service-role key;
-- WhatsApp access token;
-- Meta App Secret;
-- AI provider secret key;
-- JWT signing key.
-
-## 20. Dados necessários para conectar uma API existente
-
-Para integrar uma API que você já possui, fornecer:
-1. URL base HTTPS;
-2. documentação OpenAPI/Swagger ou coleção Postman;
-3. fluxo de autenticação;
-4. exemplo de login bem-sucedido;
-5. exemplo de usuário com duas empresas;
-6. endpoint/shape de produtos, preço e estoque;
-7. endpoint/shape de clientes;
-8. endpoints de vendedores/roles;
-9. endpoint de atribuição cliente-vendedor;
-10. endpoints de Missões/atribuições/evidências;
-11. endpoint idempotente de Pedido/Orçamento;
-12. endpoint de relatório/comissão;
-13. mecanismo de SSO;
-14. códigos de erro;
-15. ambiente sandbox/teste.
-
-Não enviar segredo no chat. Segredos devem ser cadastrados no provedor de deploy/backend.
-
-## 21. Se ainda não existe API
-
-Opção recomendada para chegar rápido:
-Postgres/Supabase para dados/auth/storage + funções server-side para regras sensíveis e webhooks.
-
-Opção de maior controle:
-API TypeScript própria + Postgres.
-
-A decisão deve ser tomada antes de implementar persistência central real.
-
-## 22. Segurança multi-tenant
-
-Toda consulta central deve validar:
-- usuário autenticado;
-- membership na empresa;
-- papel/permissão;
-- companyId derivado/validado server-side.
-
-Nunca confiar apenas em companyId enviado pelo frontend.
-
-Documentos:
-- idempotency key com constraint central;
-- auditoria de criação/envio;
-- vendedor não acessa documento de outro vendedor sem permissão.
-
-## 23. Testes de aceite novos
-
-A1. Admin cria vendedor e vendedor aparece somente na empresa correta.
-A2. Admin cria produto/SKU e vendedor recebe produto após sincronização manual.
-A3. Produto alterado no painel só muda no vendedor após sync comercial.
-A4. Admin atribui cliente a vendedor e snapshot respeita carteira.
-A5. Admin cria Missão para vendedor e somente ele recebe.
-A6. Missão recebida permanece executável offline.
-A7. Retorno offline sobe ao reconectar.
-A8. Relatório do vendedor não inclui outro vendedor.
-A9. Comissão usa percentual vigente/configuração central.
-A10. Seller não acessa CRUD administrativo.
-A11. Admin pode abrir Sistema Online na mesma sessão.
-A12. API real pode substituir demo sem alterar domínio/UI.
-A13. Busca interna por SKU funciona sem provedor externo.
-A14. Busca externa por SKU fica indisponível de forma explícita sem provedor configurado.
-A15. Sync comercial nunca envia Pedido/Orçamento.
-A16. Push de Missão não atualiza catálogo/preço/estoque.
-A17. WhatsApp/IA não expõe segredo no bundle.
-A18. Company A nunca acessa dados da Company B.
-
-## 24. Fases de implementação
-
-1. Foundation/RBAC e novo gateway composto
-2. Sistema Online shell + Vendedores
-3. Produtos/Estoque + Clientes/Carteiras
-4. Missões/admin + fluxo seller
-5. Relatórios/Comissões
-6. Sistema Online integrado/SSO
-7. WhatsApp AI configuration + backend contracts
-8. Web Push + Mapa da Equipe
-9. Real API adapter
-10. E2E/segurança/QA/deploy
-
-## 25. Limites explícitos
-
-Sem backend/API central:
-- não existe sincronização real entre dois aparelhos;
-- não existe push server-side real;
-- não existe WhatsApp webhook real;
-- não existe relatório central multiusuário real;
-- não existe SSO cross-domain real.
-
-Esses limites não serão mascarados com dados falsos em produção.
-
-
-## 26. Sistema Online oficial: Saboriza
-
-O Sistema Online a ser integrado foi identificado pelo usuário como:
-
-https://saboriza-catalogo.vercel.app/
-
-A fonte pública correspondente foi confirmada em:
-
-Ruanzinn01/Saboriza-Catalogo
-
-O HTML desse repositório declara exatamente o domínio acima como URL pública do site, portanto ele é tratado como a referência de integração atual.
-
-### Arquitetura existente que deve ser reaproveitada
+```text
+e-mail + senha
+→ Supabase Auth
+→ usuário autenticado
+→ buscar memberships/empresas
+→ selecionar empresa
+→ primeira sincronização obrigatória
+→ base local válida
+→ offline liberado
+```
+
+O primeiro login no aparelho continua exigindo internet.
+
+### Criar uma conta
+
+O botão CRIAR UMA CONTA continua significando **nova conta Óris360°**, nunca “criar vendedor”.
+
+Necessita backend de provisionamento para:
+
+- criar usuário;
+- criar empresa/ambiente;
+- criar vínculo owner;
+- iniciar trial de 7 dias;
+- registrar estado sem cobrança automática.
+
+Esse fluxo só será marcado como real quando o backend Saboriza suportá-lo.
+
+### Multiempresa
+
+O Saboriza público atual não demonstra multiempresa.
+
+Para cumprir o Prompt Mestre será necessário um modelo central equivalente a:
+
+```text
+companies
+company_memberships
+seller_profiles
+```
+
+Cada recurso comercial central deve ser associado a uma empresa ou derivado de um contexto server-side que determine a empresa.
+
+O servidor nunca confiará somente em um `companyId` enviado pelo navegador.
+
+## 9. Dados locais e histórico
+
+Nada muda nas regras locais:
+
+- IndexedDB continua sendo a base operacional offline;
+- escopo inclui dispositivo + usuário + empresa + ambiente;
+- logout não apaga IndexedDB;
+- aparelho novo começa com ZERO Pedidos/Orçamentos locais;
+- pedidos históricos do Saboriza nunca são baixados para o App;
+- o snapshot comercial nunca contém histórico central de documentos.
+
+## 10. Produtos e catálogo
+
+### Fonte online
 
 O Saboriza já possui:
 
-- catálogo público;
-- painel administrativo em /admin;
-- autenticação administrativa via Supabase Auth;
-- produtos;
-- categorias;
-- clientes;
-- fornecedores;
-- pedidos e itens;
-- cupons;
-- indicadores;
-- configurações empresariais/fiscais;
-- funções de banco para criar pedido e atualizar itens.
+- `products`;
+- `categories`;
+- `unit_price`;
+- `is_active`;
+- apresentação/embalagem;
+- imagens;
+- catálogo público.
 
-O backend real usado pelo site é Supabase. O Vercel hospeda a interface.
+Esses dados devem alimentar o snapshot do Óris360°.
 
-### Regra de integração
+### Uso no App
 
-Não duplicar no appweb os módulos empresariais que já existem no Saboriza.
+O vendedor:
 
-O Óris360° será o App do Vendedor e deve compartilhar a mesma fonte central de dados, por uma camada autorizada.
+- consulta;
+- pesquisa;
+- vê preço;
+- vê estoque conhecido;
+- usa produto na venda.
 
-Fluxo desejado:
+O vendedor não administra produto.
 
-Saboriza Admin / Supabase
-→ produtos, clientes, vendedores, carteiras, missões e regras
-→ API/RPC segura do Saboriza
-→ Óris360° sincroniza base comercial
-→ vendedor trabalha offline
-→ vendedor envia cliente/pedido/missão
-→ API/RPC segura
-→ Supabase
-→ painel Saboriza enxerga o resultado
+### Catálogo/Delivery
 
-### Dados existentes hoje no schema público versionado do Saboriza
+O fluxo “Adicionar produtos” deve utilizar os mesmos conceitos de catálogo do Saboriza/Delivery, mas renderizados a partir da base local para funcionar offline.
 
-Tabelas conhecidas:
-- categories
-- coupons
-- customers
-- ibge_cities
-- order_items
-- orders
-- products
-- settings
-- suppliers
+Não usar iframe do site online como catálogo offline.
 
-Funções conhecidas:
-- create_order
-- update_order_items
+A identidade visual Óris360° permanece própria; reaproveitar funcionalidade e dados, não copiar marca Saboriza.
 
-O schema versionado no repositório ainda não contém estruturas explícitas para:
+### Estoque
+
+O schema público analisado do Saboriza ainda não expõe estoque de produto.
+
+O Prompt Mestre exige estoque e a regra Saboriza existente determina que saldo deve ser consequência de movimentações, não um campo manual.
+
+Portanto:
+
+- não adicionar um campo de estoque editável ao App;
+- o snapshot deve consumir o saldo central calculado pelo módulo de estoque do Saboriza;
+- enquanto esse saldo oficial não existir, a integração real não atende R11/R24/R25 e não pode ser declarada completa.
+
+## 11. Clientes
+
+### Fonte central
+
+O Saboriza possui `customers`, mas o schema público atual é centrado em CNPJ.
+
+O Prompt Mestre exige CPF/CNPJ.
+
+A camada central deverá suportar identificador fiscal normalizado suficiente para CPF e CNPJ sem quebrar os dados já existentes.
+
+### Fluxos obrigatórios
+
+- criar cliente offline;
+- editar cliente offline;
+- usar imediatamente;
+- enviar cliente antes de documento relacionado;
+- no sync geral, processar pendências de cliente primeiro;
+- deduplicar dentro da mesma empresa;
+- conflito usa timestamp mais recente;
+- vendedor não exclui/inativa pelo App.
+
+### Carteira por vendedor
+
+O Saboriza atual não possui associação cliente-vendedor.
+
+Será necessária estrutura central para definir quais clientes pertencem ao vendedor.
+
+O snapshot retorna somente a carteira autorizada + regras necessárias.
+
+## 12. Orçamento e Pedido
+
+O App preserva integralmente:
+
+- nova operação sempre Orçamento;
+- SALVAR não envia;
+- GERAR PEDIDO não envia;
+- envio somente por ação explícita;
+- conversão é definitiva;
+- documento enviado é bloqueado;
+- duplicação gera novo Orçamento;
+- reenvio manual usa mesma idempotency key.
+
+### Adaptação do Saboriza
+
+O Saboriza atual possui `orders` e `order_items`, mas não expõe no schema versionado um tipo Orçamento/Pedido compatível com o Prompt Mestre.
+
+A integração server-side precisará representar ambos os tipos sem apagar a estrutura existente.
+
+O contrato central precisa armazenar, no mínimo:
+
+- tipo: quote/order;
 - vendedor;
-- perfil/papel por vendedor;
-- carteira cliente-vendedor;
-- missão e atribuição;
-- comissão;
-- assinatura Web Push;
-- localização de equipe;
-- idempotência específica do App Óris360°;
-- estoque central de produto.
+- empresa;
+- identificador local;
+- idempotency key;
+- número oficial;
+- itens aceitos;
+- campos complementares;
+- origem Óris360°;
+- timestamps.
 
-Essas lacunas precisam ser tratadas no backend Saboriza/Supabase antes de prometer sincronização real desses recursos.
+A solução concreta no banco deve ser aditiva e revisada contra dados reais antes de migration.
 
-### Decisão de fronteira
+## 13. Idempotência
 
-O appweb continuará sem conhecer tabelas Supabase diretamente nas regras de negócio.
+A garantia real pertence ao servidor.
 
-Criar uma implementação específica do gateway para Saboriza/Supabase, preservando os contratos do domínio.
+A operação de envio deve ter uma restrição única equivalente a:
 
-As operações simples de leitura podem usar Supabase com chave pública e RLS quando isso estiver comprovadamente protegido.
+```text
+empresa + idempotency_key
+```
 
-Operações sensíveis devem usar RPC/Edge Function/API server-side quando precisarem:
-- validar vendedor/empresa;
-- garantir idempotência;
-- aplicar regra de estoque;
-- atribuir carteira;
-- criar/atribuir missão;
-- calcular comissão;
-- gerar SSO;
-- enviar Web Push;
-- usar segredos do WhatsApp/IA.
+Repetir a mesma transmissão devolve o documento oficial já criado.
 
-### Configuração que será necessária
+Timeout depois de gravação nunca cria um segundo documento.
 
-No deploy do Óris360°:
-- URL do projeto Supabase usado pelo Saboriza;
-- chave pública/publishable/anon do projeto;
-- URL pública do Sistema Online: https://saboriza-catalogo.vercel.app/
+## 14. Preço e estoque
 
-Nunca colocar service-role key ou outros segredos no frontend.
+### Preço
 
-Para alterar o banco real serão necessários:
-- acesso autorizado ao projeto Supabase;
-- migrations/RLS/RPCs revisadas;
-- ambiente de teste ou possibilidade de validar sem arriscar dados de produção.
+No App:
+
+- sempre reprecificar documento não enviado com a base offline mais atual;
+- duplicação usa preço atual local.
+
+No servidor:
+
+- Orçamento preserva quantidade e não movimenta estoque;
+- Pedido aplica regra de estoque.
+
+### Venda sem estoque
+
+A configuração central deve expor:
+
+`allowSaleWithoutStock`
+
+Se NÃO:
+
+- servidor valida saldo atual;
+- reduz item até o saldo;
+- item zero é removido;
+- outros itens continuam;
+- devolve itens finais aceitos.
+
+Se SIM:
+
+- mantém quantidade solicitada conforme regra empresarial.
+
+## 15. Sincronização comercial
+
+O botão SINCRONIZAR continua sendo manual.
+
+Fluxo definitivo:
+
+```text
+1. confirmar internet/autenticação
+2. verificar estado da conta
+3. enviar clientes pendentes individualmente
+4. solicitar snapshot comercial
+5. validar snapshot completo
+6. gravar staging local
+7. ativar snapshot atomicamente
+8. atualizar data/hora da última sincronização bem-sucedida
+```
+
+Nunca envia Pedido/Orçamento.
+
+### Snapshot central
+
+Preferência: uma função/RPC transacional que devolva um único snapshot consistente, porque múltiplas consultas independentes podem enxergar versões diferentes da base.
+
+Conteúdo:
+
+- clientes autorizados;
+- produtos ativos;
+- preços;
+- saldo de estoque calculado;
+- categorias/catálogo;
+- `allowSaleWithoutStock`;
+- `accountBlocked`;
+- contatos de Ajuda;
+- VAPID pública;
+- campos de cliente;
+- demais configurações indispensáveis.
+
+Nunca incluir histórico central de Pedidos/Orçamentos.
+
+## 16. Conta bloqueada
+
+Estado central precisa distinguir:
+
+- conta ativa;
+- trial expirado/bloqueado.
+
+Bloqueada:
+
+- não pode obter novo snapshot comercial;
+- mantém última base local;
+- vendedor continua offline;
+- envio explícito de Pedido/Orçamento continua permitido.
+
+O backend de envio não pode reutilizar a mesma trava usada no snapshot.
+
+## 17. Tarefas / Missões
+
+O Saboriza público atual não apresenta módulo de Missões.
+
+Será necessário adicionar ao ecossistema central:
+
+- Missão;
+- destinatário/vendedor;
+- status;
+- prazo;
+- evidências/requisitos;
+- retorno;
+- timestamps.
+
+O vendedor vê somente as Missões destinadas a ele.
+
+Depois de recebida, a Missão permanece local e executável offline.
+
+Retorno pode subir automaticamente ao reconectar.
+
+## 18. Notificação automática de Missões
+
+Web Push permanece exceção autorizada.
+
+O App já possui o lado cliente da `PushSubscription`.
+
+Backend precisa:
+
+- persistir subscription por usuário/dispositivo;
+- disparar push quando Missão for atribuída;
+- manter chave VAPID privada server-side;
+- abrir a área de Missões ao tocar na notificação.
+
+Produtos, preços, clientes e estoque não usam esse canal para sincronização automática.
+
+## 19. Localização / Mapa da Equipe
+
+App:
+
+- envia localização somente autenticado + online + permissão;
+- localização de evidência pode ficar pendente offline.
+
+Saboriza:
+
+- precisa armazenar última localização operacional por vendedor;
+- precisa de visualização administrativa do mapa;
+- precisa de política de retenção.
+
+A PWA continua sujeita às limitações reais de Android/iOS para execução em segundo plano.
+
+## 20. Relatórios e Comissões
+
+O Saboriza já possui indicadores gerais, mas não possui no schema público:
+
+- vendedor associado ao documento;
+- percentual de comissão;
+- relatório seller-scoped.
+
+Necessário:
+
+- vínculo do documento ao vendedor;
+- comissão configurada no perfil do vendedor;
+- função/endpoint que devolva somente dados permitidos ao vendedor autenticado;
+- visão administrativa no Saboriza.
+
+O App não calcula sozinho a condição comercial que torna uma venda elegível para comissão; a fonte central decide.
+
+## 21. Sistema Online
+
+URL oficial:
+
+`https://saboriza-catalogo.vercel.app/`
+
+O botão SISTEMA ONLINE não deve abrir um endereço genérico.
+
+### Login integrado
+
+Como Netlify e Vercel são origens diferentes, a sessão de navegador não é automaticamente compartilhada.
+
+Manter o contrato já existente `createOnlineSession`.
+
+Fluxo recomendado:
+
+```text
+App autenticado
+→ servidor cria código SSO curto e de uso único
+→ abre Saboriza com código
+→ Saboriza troca código por sessão
+→ código é invalidado
+```
+
+Não colocar access token reutilizável na URL.
+
+## 22. IA no WhatsApp
+
+O Prompt Mestre exige somente integração prevista nesta etapa.
+
+No App:
+
+- mostrar estado fornecido pelo backend;
+- abrir gerenciamento quando autorizado.
+
+No Saboriza/backend:
+
+- conexão WhatsApp Business;
+- webhook;
+- segredos;
+- IA;
+- regras de capacidade.
+
+Esses segredos nunca entram no frontend.
+
+## 23. Ajuda
+
+Contatos Óris360° devem ser centrais e configuráveis.
+
+O App recebe no snapshot:
+
+- telefone/WhatsApp oficial;
+- e-mail oficial.
+
+Nenhum valor será inventado.
+
+## 24. Experiência de configuração
+
+A tela atual “CONFIGURAR INTEGRAÇÃO” será reclassificada:
+
+### Produção
+
+- integração Saboriza pré-configurada por ambiente;
+- vendedor não digita URL ou rotas;
+- tela normal mostra apenas estado da conexão/diagnóstico.
+
+### Desenvolvimento/diagnóstico
+
+A configuração HTTP genérica pode permanecer disponível de forma avançada para testes e ambientes não produtivos.
+
+Ela não faz parte do menu fixo de 10 itens.
+
+## 25. Backend Saboriza necessário
+
+Capacidades ausentes ou não comprovadas no schema público atual:
+
+1. multiempresa/memberships;
+2. perfil de vendedor;
+3. comissão por vendedor;
+4. carteira cliente-vendedor;
+5. CPF e CNPJ de forma compatível;
+6. status/trial/bloqueio da conta;
+7. saldo de estoque oficial para snapshot;
+8. configuração permitir venda sem estoque;
+9. documento central com quote/order + idempotência;
+10. snapshot comercial transacional;
+11. upsert de cliente com deduplicação/timestamp;
+12. Missões/atribuições/evidências;
+13. Push subscriptions e envio Web Push;
+14. localização operacional;
+15. relatório seller-scoped;
+16. SSO one-time exchange;
+17. contatos oficiais de Ajuda;
+18. estado da integração WhatsApp/IA.
+
+Essas capacidades devem ser implementadas no ecossistema Saboriza/Supabase, não simuladas no App.
+
+## 26. Segurança
+
+Regras obrigatórias:
+
+- RLS em todo dado exposto ao cliente;
+- `auth.uid()`/claims para identificar usuário;
+- membership validada server-side;
+- operação sensível via RPC/Edge Function;
+- publishable key pode estar no browser somente com RLS;
+- secret/service-role nunca no browser;
+- validar todos os payloads recebidos;
+- não confiar em companyId, sellerId, preço ou estoque enviados pelo cliente como autoridade;
+- idempotência garantida pelo banco;
+- logs sem senha/token/segredo;
+- URLs externas somente HTTPS em produção.
+
+## 27. Estados de erro
+
+O App deve distinguir:
+
+- offline;
+- autenticação inválida;
+- conta bloqueada;
+- timeout/rede;
+- servidor indisponível;
+- resposta inválida;
+- permissão negada;
+- integração não configurada.
+
+Falhas de integração nunca apagam a última base comercial válida.
+
+## 28. Plano de adaptação visual futura
+
+Sem alterar o menu fixo:
+
+- Pedidos permanece Home;
+- Produtos evolui de lista simples para catálogo móvel compatível com os dados Saboriza;
+- Clientes usa os campos centrais reais do Saboriza;
+- Sistema Online abre o Saboriza;
+- Relatórios usa dados seller-scoped;
+- IA no WhatsApp vira estado/entrada para gestão no Saboriza;
+- Tarefas/Missões mantém execução mobile;
+- Configuração técnica deixa de ser uma tarefa do vendedor.
+
+A identidade visual continua Óris360°.
+
+## 29. Matriz online/offline
+
+Permanece exatamente a do Prompt Mestre:
+
+| Função | Offline | Online |
+|---|---|---|
+| Criar/editar cliente | Sim | Sim |
+| Consultar produtos/catálogo | Sim | Sim |
+| Criar Orçamento/Pedido | Sim | Sim |
+| Salvar | Sim | Sim |
+| Gerar Pedido | Sim | Sim |
+| Enviar documento | Não | Sim, manual |
+| Sincronizar base | Não | Sim, manual |
+| Receber nova Missão em tempo real | Não | Sim |
+| Executar Missão recebida | Sim | Sim |
+| Retornar Missão | Pendente | Pode ser automático |
+| Relatórios/Comissões | Não | Sim |
+| Sistema Online | Não | Sim |
+| Rastreamento em tempo real | Não | Sim |
+
+## 30. Regras-mãe
+
+As 20 regras R1–R20 do Prompt Mestre são invariantes de arquitetura.
+
+Nenhuma integração Saboriza poderá alterar:
+
+- sync manual;
+- envio explícito;
+- histórico local por aparelho;
+- documento enviado bloqueado;
+- duplicação como Orçamento;
+- preço da base offline atual;
+- estoque conforme política;
+- Orçamento sem estoque;
+- isolamento usuário/empresa/dispositivo;
+- logout preservando base;
+- bloqueio sem destruir offline;
+- deduplicação fiscal;
+- idempotência;
+- preservação da última base válida.
+
+## 31. Critérios de aceite
+
+Os testes 1–24 continuam obrigatórios.
+
+A integração Saboriza adiciona estes critérios:
+
+S1. Produção não exige que vendedor digite URL/rotas de API.  
+S2. Login do App usa a mesma identidade central utilizada pelo ecossistema Saboriza.  
+S3. Snapshot usa somente dados da empresa/vendedor autorizados.  
+S4. Snapshot nunca retorna `orders`/histórico central.  
+S5. Produto/preço/ativo vêm da fonte Saboriza.  
+S6. Estoque vem da fonte central calculada, não de campo manual inventado no App.  
+S7. Cliente offline sincronizado aparece no Sistema Online sem duplicar CPF/CNPJ.  
+S8. Pedido/Orçamento enviado explicitamente aparece no Sistema Online e reenvio é idempotente.  
+S9. Documento de outro vendedor/empresa não é acessível indevidamente.  
+S10. Missão criada no Sistema Online chega somente ao vendedor destinado.  
+S11. Retorno de Missão offline aparece no Sistema Online após reconexão.  
+S12. Relatório do vendedor contém somente seus dados.  
+S13. Sistema Online abre `saboriza-catalogo.vercel.app` via handoff seguro.  
+S14. Nenhum secret/service-role aparece no bundle do App.  
+S15. Conta bloqueada não sincroniza snapshot, mas ainda pode enviar documento explicitamente.  
+S16. Queda durante snapshot conserva integralmente a base anterior.
+
+## 32. Ordem de implementação
+
+Preservar as cinco fases do Prompt Mestre.
+
+### FASE 1 — Fundação
+
+- criar `SaborizaOrisGateway`;
+- autenticação Supabase;
+- memberships/empresa ativa;
+- configuração de produção;
+- primeira sincronização;
+- isolamento local por realm Saboriza.
+
+### FASE 2 — Operação Comercial
+
+- mapear Cliente Saboriza ↔ Cliente Óris;
+- mapear Produto/Categoria Saboriza ↔ catálogo local;
+- integrar experiência de catálogo offline;
+- preço/ativo;
+- fonte central de estoque;
+- regras locais de estoque/preço.
+
+### FASE 3 — Transmissão
+
+- RPC/API de cliente relacionado;
+- RPC/API de documento;
+- idempotência central;
+- número oficial;
+- quantidades aceitas;
+- bloqueio/duplicação já existentes no App.
+
+### FASE 4 — Sincronização
+
+- pendências de cliente;
+- snapshot transacional;
+- conta bloqueada;
+- última sync;
+- falhas parciais de cliente.
+
+### FASE 5 — Integrações
+
+- Missões;
+- Web Push;
+- localização;
+- comissão/relatório;
+- SSO Saboriza;
+- Ajuda;
+- WhatsApp/IA em nível previsto.
+
+## 33. Dependências para implementação real
+
+Para conectar a produção depois da aprovação deste design serão necessários:
+
+- URL do projeto Supabase do Saboriza;
+- publishable key do projeto;
+- acesso autorizado ao Supabase para migrations/RLS/RPC/Edge Functions;
+- confirmação de ambiente seguro de teste antes de alterar dados de produção;
+- contatos oficiais de Ajuda;
+- regra oficial de quando a comissão é considerada elegível;
+- credenciais server-side de WhatsApp/IA apenas quando essa integração for implementada;
+- VAPID privada apenas no backend.
+
+Não enviar secret/service-role em conversa ou código frontend.
+
+## 34. Não objetivos
+
+Não fazer nesta adaptação:
+
+- criar CRUD de produto no App;
+- criar CRUD administrativo duplicado do Saboriza;
+- baixar histórico central;
+- enviar documento automaticamente;
+- sincronizar base automaticamente;
+- inventar estoque;
+- inventar SKU/código externo não exigido pelo Prompt Mestre;
+- inventar contatos;
+- inventar comissão;
+- expor segredo;
+- modificar o repositório Saboriza sem autorização explícita e acesso correspondente.
+
+## 35. Prova antes de conclusão
+
+Nenhuma fase poderá ser chamada de concluída apenas porque uma tela existe.
+
+Cada fase futura exige:
+
+- teste de domínio/serviço;
+- TDD quando aplicável;
+- Playwright do fluxo humano;
+- lint/typecheck/build;
+- CI;
+- comparação com R1–R20;
+- comparação com testes 1–24;
+- critérios S1–S16 quando relacionados;
+- produção verificada depois de deploy quando houver integração real.
