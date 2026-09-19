@@ -1,235 +1,206 @@
-# Óris360° — Contrato para conectar a API real
+# Óris360° — Integração real com Saboriza/Supabase
 
-A PWA não inventa URLs de produção. Toda integração externa passa pela interface TypeScript `OrisGateway`.
+Autoridade funcional: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 
-## Como conectar sem alterar o código
+Sistema Online oficial:
+- `https://saboriza-catalogo.vercel.app/`
 
-Na tela inicial do App:
+Fonte central conhecida:
+- Supabase usado pelo Saboriza.
 
-`CONFIGURAR INTEGRAÇÃO → API REAL`
+Design:
+- `docs/superpowers/specs/2026-09-19-oris360-complete-platform-design.md`
 
-Informe:
-1. a **URL base HTTPS** do backend Óris360°;
-2. as rotas correspondentes aos contratos abaixo;
-3. toque **TESTAR CONEXÃO E SALVAR**.
+Matriz de lacunas:
+- `docs/SABORIZA_ADAPTATION_MATRIX.md`
 
-O App primeiro executa a rota de saúde. A configuração só é ativada se a API responder com sucesso. Depois disso, login e demais operações usam automaticamente o adaptador HTTP.
+## Regra principal
 
-### Onde obter esses valores
+O App não inventa uma API própria nem duplica o painel Saboriza.
 
-Use uma destas fontes:
-- documentação OpenAPI/Swagger do backend Óris360°;
-- documentação técnica da API existente;
-- equipe responsável pelo backend/Sistema Online.
+A integração real deve entrar pela fronteira existente:
 
-Não copie URLs de tela do navegador supondo que sejam endpoints.
+`src/infrastructure/orisGateway.ts`
 
-### Segurança de chaves/API secrets
+A composição permanece em:
 
-**Não existe campo para chave privada no App de propósito.**
+`src/infrastructure/gatewayFactory.ts`
 
-Qualquer segredo que permita acesso de servidor deve ficar:
-- no backend Óris360°; ou
-- em variável protegida de um backend/proxy autorizado (por exemplo, função server-side da hospedagem).
+A implementação futura será específica do Saboriza/Supabase e traduzirá o backend real para o contrato `OrisGateway`.
 
-Variáveis `VITE_*`, localStorage e código JavaScript entregue ao navegador são públicos para o usuário e não devem conter segredo de servidor.
+## Configuração de produção
 
-O App pode enviar o token de sessão do próprio usuário no header `Authorization: Bearer ...` depois do login.
+Variáveis públicas permitidas:
 
-## Convenção HTTP esperada pelo adaptador
-
-A URL final é `URL base + rota configurada`.
-
-Respostas podem ser:
-- o objeto JSON diretamente; ou
-- `{ "data": <objeto> }`.
-
-Erros devem usar status HTTP coerente. Quando houver corpo:
-```json
-{
-  "error": {
-    "code": "auth_failed",
-    "message": "Mensagem segura para o usuário"
-  }
-}
+```text
+VITE_SABORIZA_SUPABASE_URL
+VITE_SABORIZA_SUPABASE_PUBLISHABLE_KEY
+VITE_SABORIZA_ONLINE_URL=https://saboriza-catalogo.vercel.app
 ```
 
-O adaptador envia, quando houver contexto autenticado:
-- `Authorization: Bearer <token-da-sessão>`;
-- `X-Oris-Company-Id`;
-- `X-Oris-User-Id`.
+Nunca expor no frontend:
 
-Tokens nunca são enviados em query string.
+- service-role/secret key;
+- senha do banco;
+- VAPID privada;
+- token WhatsApp;
+- Meta App Secret;
+- chave de IA;
+- segredo de assinatura.
 
-### CORS
+A configuração HTTP genérica atual pode continuar disponível somente para desenvolvimento/diagnóstico. Em produção, o vendedor não deve preencher manualmente URL e rotas.
 
-Como o App é uma PWA executada no navegador, o backend deve permitir CORS somente para os domínios autorizados do App (por exemplo, o domínio Netlify de produção e ambientes de desenvolvimento aprovados). Não use `Access-Control-Allow-Origin: *` junto com credenciais sensíveis em produção.
+## Autenticação
 
-## Rotas configuráveis
+O objetivo é usar a mesma identidade central do Saboriza.
 
-| Campo da tela | Método | Finalidade |
-|---|---|---|
-| Saúde / teste da API | GET | Confirmar que o backend está disponível |
-| Login | POST | Autenticar e devolver usuário, empresas e token de sessão |
-| Criar conta | POST | Criar nova conta/ambiente com teste de 7 dias |
-| Recuperar senha | POST | Iniciar recuperação sem revelar se o e-mail existe |
-| Base comercial | GET | Snapshot de clientes/produtos/preços/estoque/configuração |
-| Enviar cliente | POST | Criar/vincular/atualizar cliente |
-| Enviar Pedido/Orçamento | POST | Transmitir explicitamente com idempotência |
-| Receber Missões | GET | Missões atribuídas ao vendedor |
-| Retorno de Missão | POST | Conclusão/evidências |
-| Localização operacional | POST | Localização autorizada |
-| Relatórios e Comissões | GET | Dados somente do vendedor autenticado |
-| Login integrado / SSO | POST | Criar URL temporária segura para Sistema Online |
-| IA no WhatsApp | GET | Estado da integração e URL de gerenciamento quando permitida |
-| Push de Missões | POST | Registrar assinatura Web Push do aparelho |
+Fluxo esperado:
 
-## Contratos de dados obrigatórios
-
-### Login
-
-Entrada:
-```json
-{ "email": "usuario@empresa.com", "password": "..." }
+```text
+Supabase Auth
+→ usuário
+→ memberships/empresas
+→ empresa ativa
+→ primeira sincronização
+→ base local válida
+→ operação offline
 ```
 
-Saída:
-```json
-{
-  "data": {
-    "user": { "id": "u1", "name": "Nome", "email": "usuario@empresa.com" },
-    "companies": [{ "id": "c1", "name": "Empresa" }],
-    "token": "token-de-sessao-do-usuario"
-  }
-}
-```
+O backend ainda precisa suportar multiempresa/membership para cumprir o Prompt Mestre.
 
-### Base comercial
+## Snapshot comercial
 
-Deve retornar:
-- clientes necessários à operação;
-- produtos e estado ativo/inativo;
-- preço atual;
-- estoque atual;
+A sincronização comercial continua manual.
+
+O backend deve fornecer um snapshot consistente contendo:
+
+- clientes autorizados;
+- produtos ativos;
+- categorias/catálogo;
+- preço;
+- estoque oficial calculado;
 - `allowSaleWithoutStock`;
 - `accountBlocked`;
-- contatos centrais de Ajuda;
-- `onlineBaseUrl` quando aplicável;
-- `missionPushPublicKey` (VAPID pública) quando houver Web Push.
+- contatos de Ajuda;
+- VAPID pública;
+- campos adicionais de cliente;
+- demais configurações necessárias ao offline.
 
-**Nunca incluir histórico central de Pedidos/Orçamentos.**
+Nunca incluir histórico central de Pedidos/Orçamentos.
 
-A PWA só ativa o snapshot depois de recebê-lo e validá-lo integralmente.
+Preferência: RPC/função transacional que produza o snapshot inteiro.
 
-### Cliente
+## Clientes
 
-A rota deve:
-- operar no escopo da empresa ativa;
-- usar CPF/CNPJ normalizado para evitar duplicidade;
-- retornar ID oficial;
+A integração precisa:
+
+- aceitar cliente novo/editado;
+- deduplicar CPF/CNPJ dentro da empresa;
+- devolver ID oficial;
 - respeitar timestamp mais recente;
-- não permitir que o App inative/exclua cliente.
+- preservar regra de inativação central;
+- associar cliente ao vendedor/carteira quando aplicável.
 
-O formato atual do cliente contém nome/CPF-CNPJ porque estes são os campos cujo contrato está disponível neste repositório. Campos adicionais oficiais devem ser adicionados quando o schema real do backend for fornecido; o App não inventa nomes/campos comerciais.
+O App transmite cliente relacionado antes do documento.
 
-### Pedido / Orçamento
+## Pedido / Orçamento
 
-A rota deve:
-- aceitar a chave de idempotência estável;
-- devolver o mesmo registro oficial para repetição da mesma chave;
-- preservar Orçamento como Orçamento;
-- não movimentar estoque em Orçamento;
-- validar estoque em Pedido quando venda sem estoque = NÃO;
+A operação server-side deve:
+
+- aceitar quote/order;
+- aceitar idempotency key;
+- garantir unicidade por empresa;
+- preservar Orçamento sem movimentar/reservar estoque;
+- validar estoque somente para Pedido quando necessário;
 - devolver quantidades finais aceitas;
-- devolver número oficial e confirmação inequívoca.
+- devolver número oficial;
+- devolver confirmação inequívoca.
 
-O App só marca `sent` depois dessa confirmação.
+O App só marca `sent` depois da confirmação.
 
-### Relatórios e Comissões
+## Estoque
 
-Resposta:
-```json
-{
-  "data": {
-    "periodLabel": "Mês atual",
-    "ordersCount": 10,
-    "quotesCount": 3,
-    "grossSales": 12500,
-    "commissionPercent": 5,
-    "commissionValue": 625
-  }
-}
-```
+O App não inventará saldo.
 
-O servidor é responsável por limitar os dados ao usuário autenticado.
+O Saboriza deverá fornecer saldo oficial calculado pelo seu módulo central de estoque/movimentações.
 
-### Sistema Online / SSO
+Se `allowSaleWithoutStock = false`, a validação atual do servidor no momento do envio é obrigatória.
 
-Resposta:
-```json
-{
-  "data": {
-    "available": true,
-    "url": "https://sistema.example.com/sso/one-time-token"
-  }
-}
-```
+## Conta bloqueada
 
-A URL deve ser HTTPS e temporária. Não coloque senha ou token reutilizável em query string.
+Snapshot/sincronização comercial:
+- bloquear.
 
-### IA no WhatsApp
+Operação offline com base válida:
+- preservar.
 
-Resposta:
-```json
-{
-  "data": {
-    "available": true,
-    "connected": true,
-    "managementUrl": "https://sistema.example.com/integracoes/whatsapp",
-    "message": "Integração ativa"
-  }
-}
-```
+Envio explícito de Pedido/Orçamento:
+- permitir conforme Prompt Mestre.
 
-### Push de Missões
+As duas autorizações não podem ser tratadas como a mesma regra.
 
-A chave **pública** VAPID vem no snapshot como `missionPushPublicKey`.
+## Missões
 
-O App registra uma assinatura contendo:
-```json
-{
-  "subscription": {
-    "endpoint": "https://push-service/...",
-    "expirationTime": null,
-    "keys": {
-      "p256dh": "...",
-      "auth": "..."
-    }
-  }
-}
-```
+Backend necessário:
 
-A chave VAPID **privada** permanece exclusivamente no servidor. O backend usa a assinatura para enviar notificações de novas Missões.
+- criar/atribuir Missão;
+- listar somente Missões do vendedor;
+- receber retorno/evidências;
+- armazenar PushSubscription;
+- enviar Web Push server-side.
 
-## Erros esperados
+Retorno de Missão pode ser automático ao reconectar.
 
-O adaptador converte respostas externas para:
-- `OFFLINE`
-- `ACCOUNT_BLOCKED`
-- `AUTH_FAILED`
-- `NETWORK`
-- `SERVER`
-- `INVALID_DATA`
+## Relatórios e Comissões
 
-## Dependências externas ainda necessárias
+O servidor deve devolver apenas dados do vendedor autenticado.
 
-O lado cliente está preparado para os contratos acima. Para funcionamento de produção ainda são externos:
-- URL/rotas oficiais da API Óris360°;
-- implementação server-side correspondente;
-- mecanismo SSO real;
-- provedor/integração real de WhatsApp/IA;
-- VAPID privada e envio Web Push server-side;
-- schema completo de campos adicionais de Cliente, se existir;
-- fonte do módulo Delivery caso o catálogo existente deva ser reutilizado literalmente.
+A fonte central precisa associar documentos ao vendedor e manter a comissão configurada no perfil.
 
-Nenhum desses valores deve ser inventado pelo App.
+A regra de elegibilidade da comissão continua sendo uma decisão central, não do App.
+
+## Sistema Online / SSO
+
+Destino:
+
+`https://saboriza-catalogo.vercel.app/`
+
+Como Netlify e Vercel são origens diferentes, não presumir compartilhamento de sessão do navegador.
+
+Manter o contrato `createOnlineSession` para gerar handoff curto/de uso único.
+
+Nunca colocar access token reutilizável em URL.
+
+## IA no WhatsApp
+
+O App consome apenas:
+- disponibilidade;
+- status;
+- URL de gerenciamento autorizada.
+
+Webhook, tokens, IA e segredos permanecem server-side.
+
+## Segurança
+
+- RLS em dados acessíveis ao cliente;
+- membership validada pelo servidor;
+- operações sensíveis em RPC/Edge Function;
+- payload externo validado;
+- companyId/sellerId/preço/estoque enviados pelo cliente não são autoridade;
+- idempotência garantida no banco;
+- CORS/origens restritos;
+- secrets fora do bundle.
+
+## Dependências ainda necessárias para implementação real
+
+1. URL do projeto Supabase Saboriza;
+2. publishable key;
+3. acesso autorizado ao projeto para migrations/RLS/RPC/Edge Functions;
+4. ambiente de teste seguro;
+5. implementação das lacunas listadas em `docs/SABORIZA_ADAPTATION_MATRIX.md`;
+6. contatos oficiais de Ajuda;
+7. regra oficial de comissão;
+8. VAPID privada no servidor quando Push for ativado;
+9. credenciais server-side WhatsApp/IA quando essa integração for ativada.
+
+Não enviar secret/service-role pelo chat nem salvar em `VITE_*`.
