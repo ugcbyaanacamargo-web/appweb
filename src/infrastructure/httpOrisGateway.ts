@@ -97,7 +97,7 @@ function parseAuthResult(value: unknown): AuthResult {
     return {
       id: requiredString(item.id, 'companies[' + index + '].id'),
       name: requiredString(item.name, 'companies[' + index + '].name'),
-      role: item.role === 'owner' || item.role === 'admin' || item.role === 'seller' ? item.role : 'seller'
+      ...(item.role === 'owner' || item.role === 'admin' || item.role === 'seller' ? { role: item.role } : {})
     };
   });
   return {
