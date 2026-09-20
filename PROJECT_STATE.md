@@ -4,7 +4,7 @@ Last updated: 2026-09-19
 
 ## Current phase
 
-**Architectural adaptation of Óris360° to the real Saboriza/Supabase ecosystem is written and awaiting user review before implementation planning.**
+**Saboriza integration design approved; first independently testable delivery implemented on feature/oris360-complete-platform. Full production Saboriza/Supabase integration is NOT active.**
 
 The canonical functional source remains:
 
@@ -106,22 +106,24 @@ Not proven in the public schema/source:
 
 These are backend/integration gaps. They must not be hidden by frontend mocks.
 
-## Current design branch
+## Current implementation branch
 
 - branch: `feature/oris360-complete-platform`
-- purpose: design/adaptation only; no product behavior implementation yet.
+- purpose: Saboriza integration design plus first real App delivery; remaining production API work is blocked by external capabilities.
 
-## Gate before product implementation
+## Design and first implementation phase
 
-Superpowers architectural workflow requires:
+The user approved the written integration spec on 2026-09-20. The first-delivery plan is `docs/superpowers/plans/2026-09-20-saboriza-first-integration.md`.
 
-1. written specification;
-2. self-review;
-3. user review/approval;
-4. only then `writing-plans`;
-5. then TDD implementation in isolated work.
+Implemented and test-driven on the feature branch:
+- explicit external link to official Saboriza admin login without claiming shared DEMO authentication;
+- SSO launch now requires `available: true` and a safe URL;
+- strict Saboriza product mapper requiring verified stock/SKU and rejecting unsupported pack conversions;
+- browser E2E regression and Vitest mapper tests.
 
-Therefore the next step after this design branch is **user review of the written Saboriza integration spec**.
+Verified on implementation SHA `f52276b9a25e7f3901586a7e168dbcad6e0a149b`: app-ci success, e2e success, Engine integrity success. Subsequent documentation HEAD still requires its own fresh CI checks.
+
+Not implemented: actual Supabase Auth integration, backend snapshot/RPC, client sync against Saboriza, cross-device sales, one-time SSO and WhatsApp webhook. Do not describe these as completed.
 
 ## Implementation direction after approval
 
