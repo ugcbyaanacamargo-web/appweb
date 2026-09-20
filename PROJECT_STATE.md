@@ -144,6 +144,32 @@ Preserve Prompt Mestre phases:
 4. Sync — pending clients, transactional snapshot, blocked-account behavior.
 5. Integrations — Missions, push, location, reports/commission, SSO, Help, WhatsApp/AI.
 
+## Óris360° Aurora visual refresh — 2026-09-20
+
+The user requested a modern/futuristic interactive overhaul of the existing App, without changing the closed master business rules.
+
+Implementation branch: `feature/oris360-futuristic-ui-20260920`.
+
+Visual-only implementation:
+- atmospheric midnight/aurora shell and auth entry;
+- refined light commercial cards, hierarchy, buttons, active drawer, toasts and floating action;
+- responsive spacing and visible keyboard focus;
+- hover/touch microinteractions and page entrance animations;
+- explicit reduced-motion override.
+
+No business-domain, Dexie, gateway or remote-integration behavior was changed.
+
+Evidence from feature HEAD `326ab8fc0a6b887d339f231e7727a7da9c9affd7`:
+- app-ci `35540800891`: success (audit/lint/Vitest/build/PWA);
+- Playwright `35540800900`: success (including new mobile visual/reduced-motion acceptance);
+- Engine integrity `35540800889`: success.
+These results precede final documentation and production smoke updates, which require fresh checks.
+
+`docs/design/AURORA.md` is the permanent visual reference.
+Production smoke now must inspect the CSS marker `--iris-night` and the existing Saboriza JS marker to prevent an old Netlify deploy from passing.
+
+Real Saboriza/Supabase data integration remains pending; visual change does not pretend to resolve it.
+
 ## External inputs required before real production integration
 
 - Saboriza Supabase project URL;

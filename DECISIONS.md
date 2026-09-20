@@ -196,3 +196,20 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** The published Saboriza product schema prices individual units, may sell packs and does not expose authoritative stock/SKU. The current Óris360° document item model does not express pack-vs-unit conversions.
 
 **Consequence:** No guessed zero stock, guessed SKU, silently multiplied price or unauthorized real snapshot; pack support requires an explicit tested end-to-end rule.
+
+
+## 2026-09-20 — Aurora visual direction for Óris360° App
+
+**Decision:** Use a midnight-blue aurora design, mint/blue highlights, legible light commercial surfaces, and short responsive animations as the App visual system.
+
+**Reason:** The user requested an upgraded futuristic interface with visual response to touch, interaction and navigation while preserving the existing product.
+
+**Consequence:** Keep the business spec, offline-first behavior, ten-item navigation and distinct save/convert/send actions unchanged. Always support reduced-motion preferences, touch ergonomics and accessible focus/contrast. The source of truth is `docs/design/AURORA.md`.
+
+## 2026-09-20 — Verify visual release through deployed CSS, not an old JavaScript marker
+
+**Decision:** Production smoke must inspect the deployed stylesheet for `--iris-night` as well as the official Saboriza CTA in the deployed JS.
+
+**Reason:** A generic marker in older JS could pass while the Netlify site still served outdated CSS.
+
+**Consequence:** A visual release cannot be declared deployed from an unrelated marker; the production gate checks the requested visual asset itself.

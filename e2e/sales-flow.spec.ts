@@ -12,7 +12,10 @@ async function enterDemoCompany(page: Page) {
 
 async function closeMenu(page: Page) {
   const close = page.getByRole('button', { name: 'Fechar menu' });
-  if (await close.isVisible()) await close.click();
+  if (await close.isVisible()) {
+    await page.keyboard.press('Escape');
+    await expect(close).toBeHidden();
+  }
 }
 
 async function createQuoteWithOneItem(page: Page) {
@@ -216,4 +219,48 @@ test('Sistema Online oferece acesso seguro ao Saboriza sem prometer login DEMO c
   await expect(link).toHaveAttribute('href', 'https://saboriza-catalogo.vercel.app/admin/login');
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(page.getByText('A conta DEMO não autentica no Saboriza.')).toBeVisible();
+});
+
+test('redesign mantém navegação funcional e aplica atmosfera visual com interação acessível', async ({ page }) => {
+  await page.goto('/');
+  const landingBackground = await page.locator('.landing-screen').evaluate(element => getComputedStyle(element).backgroundImage);
+  expect(landingBackground).toContain('gradient');
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await page.getByRole('button', { name: 'ENTRAR' }).click();
+  await page.locator('.company-option').first().click();
+
+  const shell = page.locator('.app-shell');
+  await expect(shell).toBeVisible();
+  const accent = await shell.evaluate(element => getComputedStyle(element, '::before').backgroundImage);
+  expect(accent).toContain('radial-gradient');
+  const mainAnimation = await page.locator('.page-section').first().evaluate(element => getComputedStyle(element).animationName);
+  expect(mainAnimation).toContain('pageReveal');
+
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await expect(menu.locator('.drawer-item')).toHaveCount(10);
+  const active = menu.getByRole('button', { name: 'Pedidos', exact: true });
+  await expect(active).toHaveClass(/active/);
+  await menu.getByRole('button', { name: 'Clientes', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Clientes', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Clientes', exact: true })).toHaveClass(/active/);
+});
+
+test('redesign respeita movimento reduzido e mantém botões críticos utilizáveis em tela móvel', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await enterDemoCompany(page);
+  await closeMenu(page);
+
+  const section = page.locator('.page-section').first();
+  const animationDuration = await section.evaluate(element => getComputedStyle(element).animationDuration);
+  expect(animationDuration.split(',').every(value => parseFloat(value) <= 0.01)).toBe(true);
+
+  await page.getByRole('button', { name: 'Novo orçamento' }).click();
+  await expect(page.getByRole('button', { name: 'ADICIONAR PRODUTOS' })).toBeDisabled();
+  await page.locator('.selection-card').click();
+  await page.locator('.list-card-main:not([disabled])').first().click();
+  await expect(page.getByRole('button', { name: 'ADICIONAR PRODUTOS' })).toBeEnabled();
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+  const viewportWidth = await page.evaluate(() => window.innerWidth);
+  expect(scrollWidth).toBeLessThanOrEqual(viewportWidth + 1);
 });

@@ -20,6 +20,7 @@ jobs:
           site="https://oris360-site.netlify.app/"
           # The marker must identify this release; the previous generic marker matched a stale deploy.
           expected_marker="ACESSAR PAINEL SABORIZA"
+          expected_css_marker="--iris-night"
 
           for attempt in $(seq 1 30); do
             echo "Attempt $attempt/30: checking $site"
@@ -27,17 +28,27 @@ jobs:
 
             if [ -n "$html" ]; then
               asset="$(printf '%s' "$html" | grep -oE 'src="[^"]+\.js"' | head -1 | sed -E 's/src="([^"]+)"/\1/' || true)"
-              if [ -n "$asset" ]; then
+              style_asset="$(printf '%s' "$html" | grep -oE 'href="[^"]+\.css"' | head -1 | sed -E 's/href="([^"]+)"/\1/' || true)"
+              if [ -n "$asset" ] && [ -n "$style_asset" ]; then
                 case "$asset" in
                   http://*|https://*) bundle="$asset" ;;
                   /*) bundle="${site%/}$asset" ;;
                   *) bundle="$site$asset" ;;
                 esac
 
+                case "$style_asset" in
+                  http://*|https://*) stylesheet="$style_asset" ;;
+                  /*) stylesheet="${site%/}$style_asset" ;;
+                  *) stylesheet="$site$style_asset" ;;
+                esac
+
                 echo "Checking deployed bundle: $bundle"
+                echo "Checking deployed stylesheet: $stylesheet"
                 js="$(curl -fsSL --max-time 30 "$bundle" || true)"
-                if printf '%s' "$js" | grep -q "$expected_marker"; then
-                  echo "Verified production marker: $expected_marker"
+                css="$(curl -fsSL --max-time 30 "$stylesheet" || true)"
+                if [[ "$js" == *"$expected_marker"* && "$css" == *"$expected_css_marker"* ]]; then
+                  echo "Verified production JavaScript marker: $expected_marker"
+                  echo "Verified production CSS marker: $expected_css_marker"
                   exit 0
                 fi
               fi
