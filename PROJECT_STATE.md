@@ -1,10 +1,10 @@
 # Project State
 
-Last updated: 2026-09-19
+Last updated: 2026-09-20
 
 ## Current phase
 
-**Saboriza integration design approved; first independently testable delivery implemented on feature/oris360-complete-platform. Full production Saboriza/Supabase integration is NOT active.**
+**First approved Óris360° ↔ Saboriza delivery merged and verified on the public Netlify site. The actual Saboriza/Supabase data integration is NOT active.**
 
 The canonical functional source remains:
 
@@ -18,7 +18,7 @@ The Saboriza gap matrix is:
 
 - `docs/SABORIZA_ADAPTATION_MATRIX.md`
 
-## Verified production baseline before this design branch
+## Production and App baseline
 
 Production App:
 - `https://oris360-site.netlify.app/`
@@ -106,22 +106,31 @@ Not proven in the public schema/source:
 
 These are backend/integration gaps. They must not be hidden by frontend mocks.
 
-## Current implementation branch
+## Delivered integration milestones
 
-- branch: `feature/oris360-complete-platform`
-- purpose: Saboriza integration design plus first real App delivery; remaining production API work is blocked by external capabilities.
+- PR #9 merged: official Saboriza admin login link, honest SSO availability, strict product mapping, approved spec/plan/integration matrix.
+- PR #10 merged: production smoke now checks the new Saboriza button instead of an old generic marker.
+- `main` now includes commits `1888e88c43ccf5368de9aee38c54087592d05de2` and `09f065abae8d289901a37d42b78f36072d0fd223`.
+- Verified production bundle after release: `/assets/index-CXhatpMT.js`, containing `ACESSAR PAINEL SABORIZA`.
+- Saboriza source remains read-only; no database migration or API secrets have been applied.
 
 ## Design and first implementation phase
 
 The user approved the written integration spec on 2026-09-20. The first-delivery plan is `docs/superpowers/plans/2026-09-20-saboriza-first-integration.md`.
 
-Implemented and test-driven on the feature branch:
+Implemented and test-driven; released to the public App:
 - explicit external link to official Saboriza admin login without claiming shared DEMO authentication;
 - SSO launch now requires `available: true` and a safe URL;
 - strict Saboriza product mapper requiring verified stock/SKU and rejecting unsupported pack conversions;
 - browser E2E regression and Vitest mapper tests.
 
-Verified on implementation SHA `f52276b9a25e7f3901586a7e168dbcad6e0a149b`: app-ci success, e2e success, Engine integrity success. Subsequent documentation HEAD still requires its own fresh CI checks.
+Verified on merged `main` SHA `09f065abae8d289901a37d42b78f36072d0fd223`:
+- Engine integrity run `35529210819`: success;
+- app-ci run `35529210769`: dependency audit, lint, Vitest, production build and PWA/Netlify artifacts successful;
+- Playwright run `35529210775`: success;
+- production-smoke run `35529210749`: success against the exact Saboriza UI marker and deployed bundle.
+
+These checks validate the first shipped slice, **not** real company ↔ seller data synchronization.
 
 Not implemented: actual Supabase Auth integration, backend snapshot/RPC, client sync against Saboriza, cross-device sales, one-time SSO and WhatsApp webhook. Do not describe these as completed.
 
