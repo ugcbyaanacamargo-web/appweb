@@ -1,6 +1,7 @@
 import type {
   AuthResult,
   CommercialSnapshot,
+  CompanyRole,
   Customer,
   DocumentItem,
   Mission,
@@ -97,7 +98,7 @@ function parseAuthResult(value: unknown): AuthResult {
     return {
       id: requiredString(item.id, 'companies[' + index + '].id'),
       name: requiredString(item.name, 'companies[' + index + '].name'),
-      ...(item.role === 'owner' || item.role === 'admin' || item.role === 'seller' ? { role: item.role } : {})
+      ...(item.role === 'owner' || item.role === 'admin' || item.role === 'seller' ? { role: item.role as CompanyRole } : {})
     };
   });
   return {
