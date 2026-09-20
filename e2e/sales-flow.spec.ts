@@ -264,3 +264,34 @@ test('redesign respeita movimento reduzido e mantém botões críticos utilizáv
   const viewportWidth = await page.evaluate(() => window.innerWidth);
   expect(scrollWidth).toBeLessThanOrEqual(viewportWidth + 1);
 });
+
+
+test('Aurora mostra resumo local verdadeiro em celular e preserva duas abas', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await enterDemoCompany(page);
+  await page.keyboard.press('Escape');
+
+  const overview = page.getByRole('region', { name: 'Resumo da operação local' });
+  await expect(overview).toBeVisible();
+  await expect(overview.getByText('Neste aparelho', { exact: true })).toBeVisible();
+  await expect(overview.getByText('Pendentes', { exact: true })).toBeVisible();
+  await expect(overview.getByText('Enviados', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab')).toHaveCount(2);
+
+  await page.getByRole('button', { name: 'Novo orçamento' }).click();
+  await expect(page.getByRole('button', { name: 'ADICIONAR PRODUTOS' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Voltar', exact: true }).click();
+  await expect(overview.locator('.overview-metrics > div').nth(0)).toContainText('1');
+  await expect(overview.locator('.overview-metrics > div').nth(1)).toContainText('1');
+  await expect(overview.locator('.overview-metrics > div').nth(2)).toContainText('0');
+});
+
+test('Aurora identifica a página ativa no menu para leitores de tela', async ({ page }) => {
+  await enterDemoCompany(page);
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await expect(menu.getByRole('button', { name: 'Pedidos', exact: true })).toHaveAttribute('aria-current', 'page');
+  await menu.getByRole('button', { name: 'Produtos', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Produtos', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(menu.getByRole('button', { name: 'Produtos', exact: true })).toHaveAttribute('aria-current', 'page');
+});
