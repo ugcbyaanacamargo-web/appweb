@@ -1,7 +1,7 @@
 # Óris360° Sales App + Saboriza — Design de Integração
 
 Data: 2026-09-19  
-Status: ESPECIFICAÇÃO PARA REVISÃO DO USUÁRIO  
+Status: APROVADA PELO USUÁRIO EM 2026-09-20 — implementação por fases  
 Autoridade funcional: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 
 ## 1. Objetivo
