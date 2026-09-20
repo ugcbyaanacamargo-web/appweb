@@ -179,3 +179,20 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** The user declared the Prompt Mestre a closed functional specification.
 
 **Consequence:** Missing stock, sellers, Missions, commission, multi-company, SSO or other backend capabilities remain explicit integration gaps until implemented; they are never replaced by simpler contradictory behavior.
+
+
+## 2026-09-20 — Saboriza portal access is not integrated login
+
+**Decision:** Provide an explicit HTTPS link to `https://saboriza-catalogo.vercel.app/admin/login` while keeping the separate authenticated one-time SSO contract.
+
+**Reason:** The Saboriza portal exists but the DEMO identity and real cross-origin SSO have not been connected. A useful direct link must not be represented as shared authentication.
+
+**Consequence:** Opening the portal may require signing in again; only a verified `available: true` session result may be labeled integrated login.
+
+## 2026-09-20 — Reject unknown Saboriza stock, SKU and pack conversion
+
+**Decision:** The Saboriza catalog mapper fails closed if official stock/SKU data are missing or `pack_quantity` differs from 1.
+
+**Reason:** The published Saboriza product schema prices individual units, may sell packs and does not expose authoritative stock/SKU. The current Óris360° document item model does not express pack-vs-unit conversions.
+
+**Consequence:** No guessed zero stock, guessed SKU, silently multiplied price or unauthorized real snapshot; pack support requires an explicit tested end-to-end rule.
