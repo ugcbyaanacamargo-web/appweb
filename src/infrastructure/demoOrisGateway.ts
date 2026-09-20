@@ -604,7 +604,7 @@ export class DemoOrisGateway implements OrisGateway {
       throw new GatewayError('INVALID_DATA', 'Informe nome, SKU único, preço e estoque válidos para esta empresa.');
     }
     if (input.imageUrl &&
-      (!/^data:image\\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(input.imageUrl) ||
+      (!/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(input.imageUrl) ||
         input.imageUrl.length > 300_000)) {
       throw new GatewayError('INVALID_DATA', 'Foto inválida ou maior que o limite do ambiente DEMO.');
     }
