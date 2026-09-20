@@ -204,3 +204,30 @@ Webhook, tokens, IA e segredos permanecem server-side.
 9. credenciais server-side WhatsApp/IA quando essa integração for ativada.
 
 Não enviar secret/service-role pelo chat nem salvar em `VITE_*`.
+
+
+## Primeira entrega validada — acesso e catálogo (2026-09-20)
+
+O App agora oferece um link explícito para o painel em:
+
+`https://saboriza-catalogo.vercel.app/admin/login`
+
+Esse link **não transfere a autenticação** do modo DEMO. A tentativa separada de sessão integrada permanece condicionada à resposta `available: true` com URL HTTPS válida do backend.
+
+O adaptador de catálogo **ainda não foi ativado como integração remota**. A função pura de validação foi adicionada em:
+
+`src/infrastructure/saboriza/catalogMapping.ts`
+
+Ela lê somente estes campos conhecidos do cadastro público Saboriza:
+- `id`;
+- `name`;
+- `unit_price` (preço unitário);
+- `is_active`;
+- `updated_at`;
+- `pack_quantity`.
+
+Recebe SKU e estoque **somente de uma fonte comercial central verificada, fornecida separadamente**. Sem SKU/estoque, o mapeamento falha em vez de inventar valores.
+
+**Conversão de embalagens:** o Saboriza vende por packs, mas o modelo atual do App ainda não registra a conversão de unidades e packs. O mapeamento rejeita `pack_quantity != 1` até a regra ser implementada de ponta a ponta com backend, tela, estoque e testes. Não alterar preço por aproximação.
+
+Esses testes são locais e não autorizam declarar a integração Saboriza/Supabase operacional. Ainda faltam dados do projeto Supabase, permissões RLS, snapshot transacional e RPCs reais para fluxo completo.
