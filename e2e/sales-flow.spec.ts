@@ -295,3 +295,55 @@ test('Aurora identifica a página ativa no menu para leitores de tela', async ({
   await page.getByRole('button', { name: 'Abrir menu' }).click();
   await expect(menu.getByRole('button', { name: 'Produtos', exact: true })).toHaveAttribute('aria-current', 'page');
 });
+
+
+test('Sistema Online abre painel do vendedor Óris360° no mesmo site, nunca Saboriza', async ({ page }) => {
+  await enterDemoCompany(page);
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Sistema Online', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'ACESSAR PAINEL SABORIZA' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'ABRIR PAINEL DO VENDEDOR' }).click();
+  await expect(page).toHaveURL(/\/vendedor$/);
+  await expect(page.getByRole('heading', { name: 'Painel do vendedor Óris360°' })).toBeVisible();
+  await expect(page.getByText('Ambiente DEMO')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'NOVO PRODUTO' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'VOLTAR AO APP' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: 'Pedidos', exact: true })).toBeVisible();
+});
+
+test('empresa Óris360° cadastra produto DEMO e vendedor só recebe ao sincronizar', async ({ page }) => {
+  await page.goto('/empresa');
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await page.getByLabel('E-mail').fill('administrador@demo.oris360.local');
+  await page.getByLabel('Senha').fill('demo1234');
+  await page.getByRole('button', { name: 'ENTRAR' }).click();
+  await expect(page.getByRole('heading', { name: 'Painel da empresa Óris360°' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'NOVO PRODUTO' }).click();
+  await page.getByLabel('Nome do produto').fill('Produto do Painel');
+  await page.getByLabel('SKU do produto').fill('PAINEL-1');
+  await page.getByLabel('Preço unitário').fill('13.99');
+  await page.getByLabel('Estoque conhecido').fill('7');
+  await page.getByRole('button', { name: 'SALVAR PRODUTO' }).click();
+  await expect(page.getByText('Produto do Painel')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Produto do Painel')).toBeVisible();
+
+  await page.getByRole('button', { name: 'VOLTAR AO APP' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Produtos', exact: true }).click();
+  await expect(page.getByText('Produto do Painel')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Sincronizar', exact: true }).click();
+  await expect(page.getByText('SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Produto do Painel')).toBeVisible();
+});
+
+test('vendedor DEMO não ganha acesso ao painel da empresa pela URL', async ({ page }) => {
+  await page.goto('/empresa');
+  await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
+  await page.getByRole('button', { name: 'ENTRAR' }).click();
+  await expect(page.getByText('Acesso administrativo não autorizado')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'NOVO PRODUTO' })).toHaveCount(0);
+});
