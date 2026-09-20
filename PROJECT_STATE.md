@@ -217,3 +217,21 @@ Scope:
 Do not merge the superseded broad CSS branch. This follow-up has no changes to pricing, stock, manual sync, Saboriza integration, local history or offline behavior.
 
 Verify latest GitHub Actions and public Netlify before recording release evidence.
+
+
+## Full product and panel gap audit — 2026-09-20
+
+The user clarified that product completion requires a **separate seller web panel**, all company ↔ seller workflows, and end-to-end functionality beyond the existing mobile UI. Complete code-grounded read-only gap audit:
+
+- `docs/product/2026-09-20-complete-platform-gap-audit.md`.
+
+Important correction to prior broad statements: the inspected Saboriza source already contains a manual product form and ONE product image uploader using Supabase Storage (`product-images`). These features must be reused, not duplicated inside appweb. However, the appweb Product model/catalog has no image field or offline image cache, Saboriza has no seller-specific web route discovered, and the cross-system API is not live.
+
+Product surfaces:
+- appweb = fixed ten-menu offline-first seller mobile PWA;
+- Saboriza /admin = existing company/admin control panel, needs Óris-specific seller/team controls;
+- Saboriza seller-only web area = NOT IMPLEMENTED in inspected source; separate authorization/routes needed, not another mobile menu item.
+
+The audit is based on repository code and earlier CI evidence; interactive public-site navigation and live Supabase RLS/API access could not be executed in this runtime. Do not claim the missing real backend/seller panel works.
+
+Next architectural cycle: decompose foundation/roles, commercial product/media+catalog/snapshot, document transmission, dedicated seller web panel, Missions/team and subscription/integrations into independently testable specifications and plans. Follow Superpowers design-review gate; the earlier Saboriza integration spec cannot by itself prove a written implementation plan for these newly recognized subsystems.
