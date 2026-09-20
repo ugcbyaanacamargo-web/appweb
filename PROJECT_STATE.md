@@ -148,7 +148,7 @@ Preserve Prompt Mestre phases:
 
 The user requested a modern/futuristic interactive overhaul of the existing App, without changing the closed master business rules.
 
-Implementation branch: `feature/oris360-futuristic-ui-20260920`.
+Released through PR #12, merged to `main` as `820110a423e8503c7f46c994d10bc70c824fe066` and verified on Netlify.
 
 Visual-only implementation:
 - atmospheric midnight/aurora shell and auth entry;
@@ -163,7 +163,13 @@ Evidence from feature HEAD `326ab8fc0a6b887d339f231e7727a7da9c9affd7`:
 - app-ci `35540800891`: success (audit/lint/Vitest/build/PWA);
 - Playwright `35540800900`: success (including new mobile visual/reduced-motion acceptance);
 - Engine integrity `35540800889`: success.
-These results precede final documentation and production smoke updates, which require fresh checks.
+After merge to `main` commit `820110a423e8503c7f46c994d10bc70c824fe066`, all four gates passed:
+- engine `35541162285`;
+- app-ci `35541162289`;
+- Playwright `35541162262`;
+- production smoke `35541162284`.
+
+Production smoke inspected deployed JavaScript `/assets/index-DYa2MGNb.js` and the redesigned stylesheet `/assets/index-DbhvZFZ1.css`, confirming `ACESSAR PAINEL SABORIZA` and CSS marker `--iris-night`. This is release-specific evidence, not merely a generic PWA marker.
 
 `docs/design/AURORA.md` is the permanent visual reference.
 Production smoke now must inspect the CSS marker `--iris-night` and the existing Saboriza JS marker to prevent an old Netlify deploy from passing.
