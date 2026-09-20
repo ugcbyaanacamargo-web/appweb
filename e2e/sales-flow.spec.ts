@@ -169,9 +169,10 @@ test('relatórios, sistema online e WhatsApp consultam o gateway', async ({ page
 
   await page.getByRole('button', { name: 'Abrir menu' }).click();
   await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'Sistema Online', exact: true }).click();
-  await page.getByRole('button', { name: 'ABRIR SISTEMA ONLINE' }).click();
-  await expect(page.getByText('Integração ainda não disponível')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'CONFIGURAR API' })).toBeVisible();
+  await page.getByRole('button', { name: 'ABRIR PAINEL DO VENDEDOR' }).click();
+  await expect(page).toHaveURL(/\/vendedor$/);
+  await expect(page.getByRole('heading', { name: 'Painel do vendedor Óris360°' })).toBeVisible();
+  await page.getByRole('button', { name: 'VOLTAR AO APP' }).click();
 
   await page.getByRole('button', { name: 'Abrir menu' }).click();
   await page.getByRole('dialog', { name: 'Menu principal' }).getByRole('button', { name: 'IA no WhatsApp', exact: true }).click();
@@ -209,16 +210,12 @@ test('campos de cliente definidos pelo backend funcionam offline e persistem', a
   await expect(page.getByLabel('Endereço')).toHaveValue('Rua de teste, 100');
 });
 
-test('Sistema Online oferece acesso seguro ao Saboriza sem prometer login DEMO compartilhado', async ({ page }) => {
+test('Sistema Online usa apenas Óris360° e informa limitação do DEMO', async ({ page }) => {
   await enterDemoCompany(page);
   await page.getByRole('dialog', { name: 'Menu principal' })
     .getByRole('button', { name: 'Sistema Online', exact: true }).click();
-
-  const link = page.getByRole('link', { name: 'ACESSAR PAINEL SABORIZA' });
-  await expect(link).toBeVisible();
-  await expect(link).toHaveAttribute('href', 'https://saboriza-catalogo.vercel.app/admin/login');
-  await expect(link).toHaveAttribute('target', '_blank');
-  await expect(page.getByText('A conta DEMO não autentica no Saboriza.')).toBeVisible();
+  await expect(page.getByText('Seu App e seus painéis pertencem ao mesmo Óris360°')).toBeVisible();
+  await expect(page.getByRole('link', { name: /Saboriza/i })).toHaveCount(0);
 });
 
 test('redesign mantém navegação funcional e aplica atmosfera visual com interação acessível', async ({ page }) => {
