@@ -167,3 +167,21 @@ Never put secret/service-role keys in frontend or chat.
 - `docs/ACCEPTANCE_MATRIX.md`
 - `src/infrastructure/orisGateway.ts`
 - `src/infrastructure/gatewayFactory.ts`
+
+
+## 2026-09-20 — Mobile visual refresh
+
+User requested a complete mobile UI refresh with futuristic styling, animated interactions, visual feedback and improved hierarchy, without changing the functional Prompt Mestre.
+
+Branch: `feature/oris360-futuristic-mobile-design`.
+
+Implemented on this branch:
+- `src/styles.css`: Óris360° NEXT visual tokens, soft mint/deep navy gradient surfaces, luminous order overview, responsive high-contrast drawer/header, card/button interaction states, staged page entrance, animated landing orbs, reduced-motion support.
+- `src/ui/Shell.tsx`: branded two-line header and `aria-current` for active menu navigation.
+- `src/ui/Orders.tsx`: real device-local document/unsent/sent counts in visual overview; existing two tabs remain the only order tabs.
+- `e2e/sales-flow.spec.ts`: mobile 390px overview, interaction, tabs, accessibility/navigation and reduced-motion checks, plus device-local count update.
+- `.github/workflows/production-smoke.yml`: new version marker `SEU DIA EM MOVIMENTO` to prevent previous release being mistaken for the refreshed UI.
+
+No change to backend, gateway, storage schema, fixed 10 menu items, manual commercial sync, explicit document send, local historical isolation, Saboriza integration state, or pricing/stock rules.
+
+Validation and merge/deploy evidence must be checked against latest branch SHA before updating this status to released.
