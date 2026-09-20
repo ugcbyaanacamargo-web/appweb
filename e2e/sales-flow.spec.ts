@@ -12,7 +12,10 @@ async function enterDemoCompany(page: Page) {
 
 async function closeMenu(page: Page) {
   const close = page.getByRole('button', { name: 'Fechar menu' });
-  if (await close.isVisible()) await close.click();
+  if (await close.isVisible()) {
+    await page.keyboard.press('Escape');
+    await expect(close).toBeHidden();
+  }
 }
 
 async function createQuoteWithOneItem(page: Page) {
