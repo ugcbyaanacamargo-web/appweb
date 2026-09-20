@@ -929,3 +929,55 @@ button:disabled { transform: none !important; box-shadow: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .operation-overview::after { animation: none !important; }
 }
+
+
+/* Óris360° Sistema Online — independent company/seller web workspaces. */
+.web-panel {
+  min-height: 100dvh;
+  background: radial-gradient(circle at 95% 0%, rgba(52,206,156,.12), transparent 38%), #eef5f3;
+}
+.web-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 18px max(18px, calc((100vw - 1180px) / 2));
+  color: #effff9;
+  background: #0b202b;
+  border-bottom: 1px solid rgba(119,235,191,.22);
+}
+.web-panel-header .brand-lockup { margin: 0; }
+.web-panel-header .brand-lockup span { color: #b6d0cb; }
+.web-panel-header .brand-mark { color: #0c2f26; background: #a9f9d9; }
+.web-panel-header .button { width: auto; min-width: 135px; }
+.web-panel-content {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 20px 70px;
+}
+.web-panel-content .hero-copy h1 { font-size: clamp(30px, 5vw, 42px); }
+.web-panel-content h2 { font-size: 20px; color: #14352e; letter-spacing: -.035em; margin: 5px 0; }
+.web-panel-content .info-card > .button { margin-top: 12px; }
+.web-panel-content .form-card { padding: 25px; }
+.panel-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.panel-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.panel-actions .button { width: auto; flex: 1; }
+.panel-check { display: flex; gap: 10px; align-items: center; font-weight: 700; }
+.panel-photo { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.panel-photo img { width: 110px; height: 110px; border-radius: 18px; object-fit: cover; }
+.panel-photo .button { width: auto; }
+.panel-product { display: flex; align-items: center; gap: 15px; }
+.panel-product > img, .panel-product > .product-art {
+  width: 64px; height: 64px; flex: 0 0 64px; border-radius: 16px; object-fit: cover;
+}
+.panel-product .product-copy { flex: 1; min-width: 0; }
+.panel-product .product-copy small { color: #698077; }
+.panel-product .button { width: auto; }
+.catalog-product-photo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+@media(max-width: 560px) {
+  .web-panel-header { flex-direction: column; align-items: stretch; }
+  .web-panel-content { padding: 22px 15px 65px; }
+  .panel-form-grid { grid-template-columns: 1fr; }
+  .panel-product { flex-wrap: wrap; }
+  .panel-product .button { width: 100%; }
+}
