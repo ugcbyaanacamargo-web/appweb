@@ -205,3 +205,15 @@ test('campos de cliente definidos pelo backend funcionam offline e persistem', a
   await expect(page.getByLabel('E-mail', { exact: true })).toHaveValue('cliente@example.com');
   await expect(page.getByLabel('Endereço')).toHaveValue('Rua de teste, 100');
 });
+
+test('Sistema Online oferece acesso seguro ao Saboriza sem prometer login DEMO compartilhado', async ({ page }) => {
+  await enterDemoCompany(page);
+  await page.getByRole('dialog', { name: 'Menu principal' })
+    .getByRole('button', { name: 'Sistema Online', exact: true }).click();
+
+  const link = page.getByRole('link', { name: 'ACESSAR PAINEL SABORIZA' });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', 'https://saboriza-catalogo.vercel.app/admin/login');
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(page.getByText('A conta DEMO não autentica no Saboriza.')).toBeVisible();
+});
