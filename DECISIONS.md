@@ -196,3 +196,12 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** The published Saboriza product schema prices individual units, may sell packs and does not expose authoritative stock/SKU. The current Óris360° document item model does not express pack-vs-unit conversions.
 
 **Consequence:** No guessed zero stock, guessed SKU, silently multiplied price or unauthorized real snapshot; pack support requires an explicit tested end-to-end rule.
+
+
+## 2026-09-20 — Futuristic mobile design without changing business flows
+
+**Decision:** Apply a cohesive mint/deep navy mobile visual system, interactive CSS states, animated drawer/page entrances, a branded header and a factual device-local operation overview, while preserving the Prompt Mestre.
+
+**Reason:** The user requested a premium, futuristic, responsive mobile experience with movement and visual feedback. Presentation can improve without relaxing offline-first or modifying the seller's fixed menu.
+
+**Consequence:** Visual effects must remain subtle, accessible and disabled for `prefers-reduced-motion`; no third Pedidos tab, fabricated performance stats, extra menus, background network traffic or automatic sync/send. The production-smoke marker for this release is `SEU DIA EM MOVIMENTO`.
