@@ -129,3 +129,52 @@ describe('DemoOrisGateway',()=>{
     await expect(gateway.sendDocument(context,document)).resolves.toMatchObject({officialNumber:expect.any(String)});
   });
 });
+
+
+describe('DEMO company administration', () => {
+  it('lets a company owner persist a product, retaining it across gateway instances', async () => {
+    const owner = await gateway.authenticate({ email: 'administrador@demo.oris360.local', password: 'demo1234' });
+    const context: GatewayContext = {
+      companyId: owner.companies[0].id, userId: owner.user.id,
+      scopeKey: 'demo-owner-scope', token: owner.token
+    };
+    const saved = await gateway.saveCompanyProduct(context, {
+      name: 'Produto integrado DEMO', sku: 'INT-001', price: 12.8,
+      stock: 6, description: 'Descrição', imageUrl: undefined, active: true
+    });
+    const refreshed = new DemoOrisGateway(storage);
+    expect((await refreshed.fetchCompanyProducts(context)).find(row => row.id === saved.id))
+      .toMatchObject({ name: 'Produto integrado DEMO', stock: 6, price: 12.8 });
+    expect((await refreshed.fetchCommercialSnapshot(context)).products.some(row => row.id === saved.id)).toBe(true);
+  });
+
+  it('denies seller access to company product mutations and other company contexts', async () => {
+    const seller = await login();
+    const sellerContext: GatewayContext = {
+      companyId: seller.companies[0].id, userId: seller.user.id,
+      scopeKey: 'seller', token: seller.token
+    };
+    await expect(gateway.saveCompanyProduct(sellerContext, {
+      name: 'Intruso', sku: 'I-001', price: 1, stock: 1, active: true
+    })).rejects.toMatchObject({ code: 'AUTH_FAILED' });
+    const owner = await gateway.authenticate({ email: 'administrador@demo.oris360.local', password: 'demo1234' });
+    await expect(gateway.fetchCompanyProducts({
+      companyId: 'demo-company-b', userId: owner.user.id, scopeKey: 'other-company', token: owner.token
+    })).rejects.toMatchObject({ code: 'AUTH_FAILED' });
+  });
+
+  it('rejects duplicate SKU and invalid product numbers in the same company', async () => {
+    const owner = await gateway.authenticate({ email: 'administrador@demo.oris360.local', password: 'demo1234' });
+    const context: GatewayContext = {
+      companyId: owner.companies[0].id, userId: owner.user.id,
+      scopeKey: 'owner', token: owner.token
+    };
+    for (const product of [
+      { name: 'Duplicado', sku: 'AG500', price: 1, stock: 1, active: true },
+      { name: 'Preço inválido', sku: 'INV-P', price: -1, stock: 1, active: true },
+      { name: 'Estoque inválido', sku: 'INV-S', price: 1, stock: 1.7, active: true }
+    ]) {
+      await expect(gateway.saveCompanyProduct(context, product)).rejects.toMatchObject({ code: 'INVALID_DATA' });
+    }
+  });
+});
