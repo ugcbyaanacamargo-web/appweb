@@ -301,7 +301,7 @@ test('Sistema Online abre painel do vendedor Óris360° no mesmo site, nunca Sab
   await page.getByRole('button', { name: 'ABRIR PAINEL DO VENDEDOR' }).click();
   await expect(page).toHaveURL(/\/vendedor$/);
   await expect(page.getByRole('heading', { name: 'Painel do vendedor Óris360°' })).toBeVisible();
-  await expect(page.getByText('Ambiente DEMO')).toBeVisible();
+  await expect(page.locator('.web-panel-content .eyebrow').first()).toHaveText('Ambiente DEMO');
   await expect(page.getByRole('button', { name: 'NOVO PRODUTO' })).toHaveCount(0);
   await page.getByRole('button', { name: 'VOLTAR AO APP' }).click();
   await expect(page).toHaveURL(/\/$/);
@@ -341,6 +341,7 @@ test('vendedor DEMO não ganha acesso ao painel da empresa pela URL', async ({ p
   await page.goto('/empresa');
   await page.getByRole('button', { name: 'JÁ TENHO CONTA' }).click();
   await page.getByRole('button', { name: 'ENTRAR' }).click();
+  await page.locator('.company-option').first().click();
   await expect(page.getByText('Acesso administrativo não autorizado')).toBeVisible();
   await expect(page.getByRole('button', { name: 'NOVO PRODUTO' })).toHaveCount(0);
 });
