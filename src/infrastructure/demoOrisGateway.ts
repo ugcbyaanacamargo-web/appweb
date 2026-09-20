@@ -2,6 +2,7 @@ import type {
   AuthResult,
   CommercialSnapshot,
   CompanyRef,
+  CompanyRole,
   Customer,
   CustomerFieldDefinition,
   Mission,
@@ -27,6 +28,11 @@ export const DEMO_CREDENTIALS = Object.freeze({
   password: 'demo1234'
 });
 
+export const ADMIN_DEMO_CREDENTIALS = Object.freeze({
+  email: 'administrador@demo.oris360.local',
+  password: 'demo1234'
+});
+
 interface DemoAccount {
   email: string;
   passwordHash: string;
@@ -34,6 +40,7 @@ interface DemoAccount {
   companyIds: string[];
   trialEndsAt?: string;
   commissionPercent: number;
+  roles?: Record<string, CompanyRole>;
 }
 
 interface ServerCustomer {
@@ -52,6 +59,8 @@ interface ServerProduct {
   active: boolean;
   price: number;
   stock: number;
+  description?: string;
+  imageUrl?: string;
   updatedAt: string;
 }
 
@@ -148,7 +157,19 @@ export class DemoOrisGateway implements OrisGateway {
 
   private async state(): Promise<DemoState> {
     const current = this.read();
-    if (current) return current;
+    if (current) {
+      if (!current.accounts.some(account => account.email === ADMIN_DEMO_CREDENTIALS.email)) {
+        current.accounts.push({
+          email: ADMIN_DEMO_CREDENTIALS.email,
+          passwordHash: await hash(ADMIN_DEMO_CREDENTIALS.email + ':' + ADMIN_DEMO_CREDENTIALS.password),
+          user: { id: 'demo-admin-1', name: 'Administrador Demo', email: ADMIN_DEMO_CREDENTIALS.email },
+          companyIds: ['demo-company-a'], commissionPercent: 0,
+          roles: { 'demo-company-a': 'owner' }
+        });
+        this.write(current);
+      }
+      return current;
+    }
 
     const seededAt = nowIso();
     const user: UserIdentity = {
@@ -163,7 +184,18 @@ export class DemoOrisGateway implements OrisGateway {
         passwordHash: await hash(DEMO_CREDENTIALS.email + ':' + DEMO_CREDENTIALS.password),
         user,
         companyIds: ['demo-company-a', 'demo-company-b'],
-        commissionPercent: 5
+        commissionPercent: 5,
+        roles: { 'demo-company-a': 'seller', 'demo-company-b': 'seller' }
+      }, {
+        email: ADMIN_DEMO_CREDENTIALS.email,
+        passwordHash: await hash(ADMIN_DEMO_CREDENTIALS.email + ':' + ADMIN_DEMO_CREDENTIALS.password),
+        user: {
+          id: 'demo-admin-1', name: 'Administrador Demo',
+          email: ADMIN_DEMO_CREDENTIALS.email
+        },
+        companyIds: ['demo-company-a'],
+        commissionPercent: 0,
+        roles: { 'demo-company-a': 'owner' }
       }],
       companies: [
         {
@@ -229,6 +261,25 @@ export class DemoOrisGateway implements OrisGateway {
     return state;
   }
 
+  private assertMember(state: DemoState, context: GatewayContext): DemoAccount {
+    const account = state.accounts.find(item =>
+      item.user.id === context.userId &&
+      context.token === 'demo-session:' + item.user.id &&
+      item.companyIds.includes(context.companyId)
+    );
+    if (!account) throw new GatewayError('AUTH_FAILED', 'Usuário não vinculado à empresa DEMO.');
+    return account;
+  }
+
+  private assertCompanyAdmin(state: DemoState, context: GatewayContext): DemoCompany {
+    const account = this.assertMember(state, context);
+    const role = account.roles?.[context.companyId] ?? (account.trialEndsAt ? 'owner' : 'seller');
+    if (role !== 'owner' && role !== 'admin') {
+      throw new GatewayError('AUTH_FAILED', 'Acesso administrativo não autorizado.');
+    }
+    return this.company(state, context.companyId);
+  }
+
   private company(state: DemoState, companyId: string): DemoCompany {
     const company = state.companies.find(item => item.id === companyId);
     if (!company) throw new GatewayError('INVALID_DATA', 'Empresa não encontrada.');
@@ -248,7 +299,10 @@ export class DemoOrisGateway implements OrisGateway {
       companies: account.companyIds
         .map(id => state.companies.find(company => company.id === id))
         .filter((company): company is DemoCompany => Boolean(company))
-        .map<CompanyRef>(company => ({ id: company.id, name: company.name })),
+        .map<CompanyRef>(company => ({
+          id: company.id, name: company.name,
+          role: account.roles?.[company.id] ?? (account.trialEndsAt ? 'owner' : 'seller')
+        })),
       token: 'demo-session:' + account.user.id
     };
   }
@@ -276,7 +330,8 @@ export class DemoOrisGateway implements OrisGateway {
       user,
       companyIds: [companyId],
       trialEndsAt: plusDaysIso(7),
-      commissionPercent: 0
+      commissionPercent: 0,
+      roles: { [companyId]: 'owner' }
     });
     state.companies.push({
       id: companyId,
@@ -296,7 +351,7 @@ export class DemoOrisGateway implements OrisGateway {
 
     return {
       user,
-      companies: [{ id: companyId, name: 'Minha empresa Óris360°' }],
+      companies: [{ id: companyId, name: 'Minha empresa Óris360°', role: 'owner' }],
       token: 'demo-session:' + userId
     };
   }
@@ -525,6 +580,60 @@ export class DemoOrisGateway implements OrisGateway {
     _subscription: PushSubscriptionPayload
   ): Promise<void> {
     // No server-side push channel exists in DEMO mode.
+  }
+
+  async fetchCompanyProducts(context: GatewayContext): Promise<Product[]> {
+    const state = await this.state();
+    const company = this.assertCompanyAdmin(state, context);
+    return company.products.map(product => ({ ...product, scopeKey: context.scopeKey }));
+  }
+
+  async saveCompanyProduct(context: GatewayContext, input: {
+    id?: string; name: string; sku: string; price: number; stock: number;
+    description?: string; imageUrl?: string; active: boolean;
+  }): Promise<Product> {
+    const state = await this.state();
+    const company = this.assertCompanyAdmin(state, context);
+    const name = input.name.trim();
+    const sku = input.sku.trim().toUpperCase();
+    if (!name || name.length > 160 || !sku || sku.length > 64 ||
+      !Number.isFinite(input.price) || input.price < 0 ||
+      !Number.isInteger(input.stock) || input.stock < 0 ||
+      typeof input.active !== 'boolean' ||
+      company.products.some(product => product.sku.toUpperCase() === sku && product.id !== input.id)) {
+      throw new GatewayError('INVALID_DATA', 'Informe nome, SKU único, preço e estoque válidos para esta empresa.');
+    }
+    if (input.imageUrl &&
+      (!/^data:image\\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(input.imageUrl) ||
+        input.imageUrl.length > 300_000)) {
+      throw new GatewayError('INVALID_DATA', 'Foto inválida ou maior que o limite do ambiente DEMO.');
+    }
+    const old = input.id ? company.products.find(product => product.id === input.id) : undefined;
+    if (input.id && !old) throw new GatewayError('INVALID_DATA', 'Produto inexistente nesta empresa.');
+    const product: ServerProduct = {
+      id: old?.id ?? 'prod-' + crypto.randomUUID(),
+      name, sku, price: input.price, stock: input.stock,
+      description: input.description?.trim().slice(0, 1000) || undefined,
+      imageUrl: input.imageUrl, active: input.active, updatedAt: nowIso()
+    };
+    if (old) Object.assign(old, product);
+    else company.products.push(product);
+    this.write(state);
+    return { ...product, scopeKey: context.scopeKey };
+  }
+
+  async fetchSellerDocuments(context: GatewayContext): Promise<Array<{
+    officialNumber: string; kind: SalesDocument['kind']; receivedAt: string;
+    items: SalesDocument['items'];
+  }>> {
+    const state = await this.state();
+    this.assertMember(state, context);
+    return this.company(state, context.companyId).centralDocuments
+      .filter(document => document.sellerId === context.userId)
+      .map(document => ({
+        officialNumber: document.officialNumber, kind: document.kind,
+        receivedAt: document.receivedAt, items: document.items.map(item => ({ ...item }))
+      }));
   }
 
   async setCompanyBlockedForDemo(companyId: string, blocked: boolean): Promise<void> {
