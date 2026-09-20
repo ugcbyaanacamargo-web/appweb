@@ -38,6 +38,8 @@ export interface Product {
   active: boolean;
   price: number;
   stock: number;
+  description?: string;
+  imageUrl?: string;
   updatedAt: string;
 }
 
@@ -113,9 +115,12 @@ export interface UserIdentity {
   email: string;
 }
 
+export type CompanyRole = 'owner' | 'admin' | 'seller';
+
 export interface CompanyRef {
   id: string;
   name: string;
+  role?: CompanyRole;
 }
 
 export interface AuthResult {
