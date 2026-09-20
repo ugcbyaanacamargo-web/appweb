@@ -54,7 +54,7 @@ export function mapSaborizaProducts(
       return invalid('estado ativo/inativo ausente ou inválido.');
     }
     const updatedAt = nonemptyString(row.updated_at, 'data de atualização');
-    if (!/^\\d{4}-\\d{2}-\\d{2}T/.test(updatedAt) || !Number.isFinite(Date.parse(updatedAt))) {
+    if (!/^\d{4}-\d{2}-\d{2}T/.test(updatedAt) || !Number.isFinite(Date.parse(updatedAt))) {
       return invalid('data de atualização inválida.');
     }
 
