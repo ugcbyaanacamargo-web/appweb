@@ -18,7 +18,8 @@ jobs:
         run: |
           set -euo pipefail
           site="https://oris360-site.netlify.app/"
-          expected_marker="oris360.integration.v1"
+          # The marker must identify this release; the previous generic marker matched a stale deploy.
+          expected_marker="ACESSAR PAINEL SABORIZA"
 
           for attempt in $(seq 1 30); do
             echo "Attempt $attempt/30: checking $site"
