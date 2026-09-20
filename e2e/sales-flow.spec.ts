@@ -12,7 +12,10 @@ async function enterDemoCompany(page: Page) {
 
 async function closeMenu(page: Page) {
   const close = page.getByRole('button', { name: 'Fechar menu' });
-  if (await close.isVisible()) await close.click();
+  if (await close.isVisible()) {
+    const viewport = page.viewportSize();
+    await close.click({ position: { x: (viewport?.width ?? 1280) - 18, y: 18 } });
+  }
 }
 
 async function createQuoteWithOneItem(page: Page) {
@@ -226,7 +229,7 @@ test('design mobile exibe resumo real e mantém apenas as duas abas de pedidos',
 
   const overview = page.getByRole('region', { name: 'Resumo da operação local' });
   await expect(overview).toBeVisible();
-  await expect(overview.getByText('Neste aparelho')).toBeVisible();
+  await expect(overview.getByText('Neste aparelho', { exact: true })).toBeVisible();
   await expect(overview.getByText('Pendentes')).toBeVisible();
   await expect(overview.getByText('Enviados')).toBeVisible();
   await expect(page.getByRole('tab')).toHaveCount(2);
