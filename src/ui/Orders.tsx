@@ -32,6 +32,7 @@ export function Orders({ onNew, onOpen }: OrdersProps) {
   }, [runtime.db, runtime.scopeKey, runtime.revision]);
 
   const unsentCount = documents.filter(document => document.state === 'local').length;
+  const sentCount = documents.length - unsentCount;
   const visible = useMemo(
     () => tab === 'all' ? documents : documents.filter(document => document.state === 'local'),
     [documents, tab]
@@ -43,6 +44,20 @@ export function Orders({ onNew, onOpen }: OrdersProps) {
         <span className="eyebrow">OPERAÇÃO LOCAL</span>
         <h1>Pedidos</h1>
         <p>Seus documentos deste aparelho. O histórico central nunca é baixado para cá.</p>
+      </div>
+
+      <div className="operation-overview" role="region" aria-label="Resumo da operação local">
+        <div className="overview-heading">
+          <span className="eyebrow">SEU DIA EM MOVIMENTO</span>
+          <span className="overview-glow" aria-hidden="true">✦</span>
+        </div>
+        <strong className="overview-title">Sua operação, no seu ritmo.</strong>
+        <p>Continue vendendo neste aparelho, mesmo quando a conexão falhar.</p>
+        <div className="overview-metrics">
+          <div><strong>{documents.length}</strong><span>Neste aparelho</span></div>
+          <div><strong>{unsentCount}</strong><span>Pendentes</span></div>
+          <div><strong>{sentCount}</strong><span>Enviados</span></div>
+        </div>
       </div>
 
       <div className="tabs" role="tablist" aria-label="Filtros de pedidos">
