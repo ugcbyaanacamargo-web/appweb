@@ -222,3 +222,12 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** A simultaneous visual redesign had already landed on main. Replacing it with another broad stylesheet would risk regressions and duplicate visual rules. The seller benefits from clear status counts without another server-dependent dashboard.
 
 **Consequence:** Exactly two Pedidos tabs remain; overview counters are informational and recomputed from local data, including unsent state. Production smoke must match the new overview and Aurora stylesheet. Accessibility includes `aria-current` for active navigation.
+
+
+## 2026-09-20 — Separate seller web area is an independent missing product surface
+
+**Decision:** The seller needs a web panel separate from the mobile PWA and from the Saboriza admin navigation, while reusing the same Saboriza authentication/backend and observing seller-specific authorization.
+
+**Reason:** Prompt Mestre section 44 requires a seller-facing Reports/Commissions page accessible directly on the site with the same credentials; sections 43/45 require operational/team/online permissions. The current Saboriza public source has `/admin` routes but no seller-specific web area.
+
+**Consequence:** Build seller web routes and company/seller role enforcement in the Saboriza Sistema Online; never expose the admin panel indiscriminately or append an eleventh menu item to the mobile App. Seller central document views are online-only; mobile document history remains device-local.
