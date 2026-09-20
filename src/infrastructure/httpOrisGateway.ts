@@ -96,7 +96,8 @@ function parseAuthResult(value: unknown): AuthResult {
     const item = recordOrInvalid(company, 'companies[' + index + ']');
     return {
       id: requiredString(item.id, 'companies[' + index + '].id'),
-      name: requiredString(item.name, 'companies[' + index + '].name')
+      name: requiredString(item.name, 'companies[' + index + '].name'),
+      role: item.role === 'owner' || item.role === 'admin' || item.role === 'seller' ? item.role : 'seller'
     };
   });
   return {
@@ -143,6 +144,8 @@ function parseProduct(value: unknown, indexLabel = 'product', scopeKey?: string)
     active: requiredBoolean(row.active, indexLabel + '.active'),
     price: requiredNumber(row.price, indexLabel + '.price'),
     stock: requiredNumber(row.stock, indexLabel + '.stock'),
+    description: optionalString(row.description, indexLabel + '.description'),
+    imageUrl: optionalString(row.imageUrl, indexLabel + '.imageUrl'),
     updatedAt: requiredString(row.updatedAt, indexLabel + '.updatedAt')
   };
 }
