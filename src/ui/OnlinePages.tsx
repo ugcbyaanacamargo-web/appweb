@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { SellerReport, WhatsappIntegrationStatus } from '../domain/models';
 import { useRuntime } from '../app/AppContext';
 import { pageRequiresOnline, type MainPage } from './menu';
+import { integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
 
 function OnlineGate({
   page,
@@ -97,8 +98,11 @@ export function Reports() {
   );
 }
 
+const SABORIZA_LOGIN_URL = 'https://saboriza-catalogo.vercel.app/admin/login';
+
 export function OnlineSystem({ onConfigureIntegration }: { onConfigureIntegration: () => void }) {
   const runtime = useRuntime();
+  const demoMode = loadIntegrationConfig(integrationStorage()).mode === 'demo';
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -108,9 +112,7 @@ export function OnlineSystem({ onConfigureIntegration }: { onConfigureIntegratio
     setMessage('');
     try {
       const session = await runtime.gateway.createOnlineSession(runtime.gatewayContext);
-      const url = session.url ?? runtime.context.onlineBaseUrl;
-      if (session.available && url && openSafeExternalUrl(url)) return;
-      if (url && openSafeExternalUrl(url)) return;
+      if (session.available && session.url && openSafeExternalUrl(session.url)) return;
       setMessage(session.message || 'O backend ainda não forneceu uma sessão integrada do Sistema Online.');
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : 'Não foi possível abrir o Sistema Online.');
@@ -122,14 +124,21 @@ export function OnlineSystem({ onConfigureIntegration }: { onConfigureIntegratio
   return (
     <section className="stack page-section">
       <div className="hero-copy compact">
-        <span className="eyebrow">LOGIN INTEGRADO</span>
+        <span className="eyebrow">SISTEMA ONLINE</span>
         <h1>Sistema Online</h1>
-        <p>Mesmo usuário e mesma empresa ativa, respeitando as permissões da plataforma web.</p>
+        <p>Acesse o painel Saboriza. O login integrado só será usado quando a conexão oficial da sua conta estiver disponível.</p>
       </div>
       <OnlineGate page="online">
         <div className="info-card">
-          <strong>Sessão integrada</strong>
-          <p>O App solicita ao backend uma URL temporária/autenticada. Senhas e tokens não são colocados na URL pelo navegador.</p>
+          <strong>Entrar no painel da empresa</strong>
+          <p>{demoMode ? 'A conta DEMO não autentica no Saboriza.' : 'Enquanto a sessão integrada não estiver disponível, pode ser necessário entrar novamente no Saboriza.'}</p>
+          <a
+            className="button secondary"
+            href={SABORIZA_LOGIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >ACESSAR PAINEL SABORIZA</a>
+          <p>Para entrar sem digitar a senha novamente, a integração oficial precisa emitir uma sessão de uso único.</p>
           <button className="button primary" disabled={busy} onClick={open}>
             {busy ? 'ABRINDO…' : 'ABRIR SISTEMA ONLINE'}
           </button>

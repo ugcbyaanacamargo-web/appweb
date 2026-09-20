@@ -154,3 +154,45 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 
 **Consequence:** Every push to `main` polls the public Netlify site and verifies a marker from the expected production build before deployment is treated as verified.
 
+
+
+## 2026-09-19 — Saboriza is the official Sistema Online target for Óris360°
+
+**Decision:** Treat `https://saboriza-catalogo.vercel.app/` and its Supabase-backed ecosystem as the Sistema Online that the Óris360° seller App integrates with.
+
+**Reason:** The user explicitly identified this existing system, and its public source already contains Products, Customers, Orders, Categories, Suppliers, Settings, Indicators and Supabase authentication.
+
+**Consequence:** Do not build a duplicate company-admin product in appweb. Reuse Saboriza capabilities and add only the central capabilities required by the Prompt Mestre that Saboriza does not yet expose.
+
+## 2026-09-19 — Production integration becomes a dedicated Saboriza/Supabase gateway
+
+**Decision:** Keep `OrisGateway` as the App boundary, but plan a dedicated Saboriza/Supabase implementation for production. The generic HTTP endpoint-mapping UI remains a development/diagnostic capability rather than a seller-facing production requirement.
+
+**Reason:** The real backend target is now known. A dedicated adapter reduces manual configuration and allows security/business rules to live in Supabase RLS, RPCs and server-side functions.
+
+**Consequence:** UI/domain code must not query Saboriza tables directly. Public browser keys require least-privilege RLS; secret/service-role keys remain server-side.
+
+## 2026-09-19 — Prompt Mestre remains immutable over Saboriza limitations
+
+**Decision:** Existing limitations in the current Saboriza schema cannot weaken the 20 master rules or 24 acceptance criteria.
+
+**Reason:** The user declared the Prompt Mestre a closed functional specification.
+
+**Consequence:** Missing stock, sellers, Missions, commission, multi-company, SSO or other backend capabilities remain explicit integration gaps until implemented; they are never replaced by simpler contradictory behavior.
+
+
+## 2026-09-20 — Saboriza portal access is not integrated login
+
+**Decision:** Provide an explicit HTTPS link to `https://saboriza-catalogo.vercel.app/admin/login` while keeping the separate authenticated one-time SSO contract.
+
+**Reason:** The Saboriza portal exists but the DEMO identity and real cross-origin SSO have not been connected. A useful direct link must not be represented as shared authentication.
+
+**Consequence:** Opening the portal may require signing in again; only a verified `available: true` session result may be labeled integrated login.
+
+## 2026-09-20 — Reject unknown Saboriza stock, SKU and pack conversion
+
+**Decision:** The Saboriza catalog mapper fails closed if official stock/SKU data are missing or `pack_quantity` differs from 1.
+
+**Reason:** The published Saboriza product schema prices individual units, may sell packs and does not expose authoritative stock/SKU. The current Óris360° document item model does not express pack-vs-unit conversions.
+
+**Consequence:** No guessed zero stock, guessed SKU, silently multiplied price or unauthorized real snapshot; pack support requires an explicit tested end-to-end rule.
