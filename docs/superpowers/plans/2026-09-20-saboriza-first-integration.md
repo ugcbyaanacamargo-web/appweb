@@ -41,11 +41,11 @@
 - Consumes: `runtime.online`, `runtime.gateway.createOnlineSession(context)`, `OnlineSessionResult`.
 - Produces: link HTTPS explícito para `https://saboriza-catalogo.vercel.app/admin/login`, sem token, mais tentativas SSO apenas quando resposta `available` e URL HTTPS válida.
 
-- [ ] **Step 1: Write failing browser test.** Extend existing Reports/Online/WhatsApp journey to assert the named Saboriza link appears, points to `https://saboriza-catalogo.vercel.app/admin/login`, is independently clickable, and explanatory text says login integrado ainda depende de conexão oficial.
-- [ ] **Step 2: Observe RED.** Push only the failing test to isolated branch; inspect the Playwright job failure and confirm it fails because the link is absent.
-- [ ] **Step 3: Implement minimal UI.** Keep SSO attempt on the existing button, but never open `session.url` if `available = false`. Render HTTPS anchor with `target="_blank"` and `rel="noopener noreferrer"`; warn that DEMO login does not authenticate in Saboriza and that signing in may be required.
-- [ ] **Step 4: Observe GREEN.** Run full Playwright via GitHub Actions, plus lint, Vitest, build, PWA and engine integrity.
-- [ ] **Step 5: Commit.** `feat: link Sistema Online to official Saboriza login`.
+- [x] **Step 1: Write failing browser test.** Extend existing Reports/Online/WhatsApp journey to assert the named Saboriza link appears, points to `https://saboriza-catalogo.vercel.app/admin/login`, is independently clickable, and explanatory text says login integrado ainda depende de conexão oficial.
+- [x] **Step 2: Observe RED.** Push only the failing test to isolated branch; inspect the Playwright job failure and confirm it fails because the link is absent.
+- [x] **Step 3: Implement minimal UI.** Keep SSO attempt on the existing button, but never open `session.url` if `available = false`. Render HTTPS anchor with `target="_blank"` and `rel="noopener noreferrer"`; warn that DEMO login does not authenticate in Saboriza and that signing in may be required.
+- [x] **Step 4: Observe GREEN.** Run full Playwright via GitHub Actions, plus lint, Vitest, build, PWA and engine integrity.
+- [x] **Step 5: Commit.** `feat: link Sistema Online to official Saboriza login`.
 
 ### Task 2: Validação de catálogo Saboriza sem estoque inventado
 
@@ -57,11 +57,11 @@
 - Consumes: parsed, unknown Saboriza products with fields `id`, `name`, `unit_price`, `is_active`, `updated_at`.
 - Produces: `mapSaborizaProducts(records: unknown, scopeKey: string, details: Map<string, { sku: string; stock: number }>): Product[]`; throws `GatewayError('INVALID_DATA')` on missing/invalid/duplicate product id, price, timestamps, SKU or stock.
 
-- [ ] **Step 1: Write failing unit tests.** Product with valid verified stock+SKU maps price/active correctly; product lacking stock or SKU fails; invalid price fails; duplicate id fails; empty active catalog can succeed only when the central snapshot intentionally returned an empty list.
-- [ ] **Step 2: Observe RED.** Commit test-only changes and inspect failing Vitest job for missing mapper export.
-- [ ] **Step 3: Implement minimal mapper.** No Supabase call or guessed RPC; reject invalid data rather than substituting zero stock.
-- [ ] **Step 4: Observe GREEN.** Run tests/build/lint and relevant regression.
-- [ ] **Step 5: Commit.** `feat: add strict Saboriza catalog boundary`.
+- [x] **Step 1: Write failing unit tests.** Product with valid verified stock+SKU maps price/active correctly; product lacking stock or SKU fails; invalid price fails; duplicate id fails; empty active catalog can succeed only when the central snapshot intentionally returned an empty list.
+- [x] **Step 2: Observe RED.** Commit test-only changes and inspect failing Vitest job for missing mapper export.
+- [x] **Step 3: Implement minimal mapper.** No Supabase call or guessed RPC; reject invalid data rather than substituting zero stock.
+- [x] **Step 4: Observe GREEN.** Run tests/build/lint and relevant regression.
+- [x] **Step 5: Commit.** `feat: add strict Saboriza catalog boundary`.
 
 ### Task 3: API pendente, sem fingir integração
 
@@ -74,10 +74,10 @@
 **Interfaces:**
 - Documents: exact Saboriza source fields, missing remote stock/SKU/quote/order/SSO/permissions and final required Supabase sandbox/prod connection details.
 
-- [ ] **Step 1: Document what the mapper validates and which public schema values were confirmed from the source.**
-- [ ] **Step 2: Mark Saboriza production adapter as **not activated** pending authorized project URL, publishable key, RLS, matching snapshot/RPCs and sandbox tests.
-- [ ] **Step 3: Verify diff is scoped and contains no secret.**
-- [ ] **Step 4: Inspect all branch gates; keep PR draft if real integration prerequisites remain.**
+- [x] **Step 1: Document what the mapper validates and which public schema values were confirmed from the source.**
+- [x] **Step 2: Mark Saboriza production adapter as **not activated** pending authorized project URL, publishable key, RLS, matching snapshot/RPCs and sandbox tests.
+- [x] **Step 3: Verify diff is scoped and contains no secret.**
+- [x] **Step 4: Inspect all branch gates; keep PR draft if real integration prerequisites remain.**
 
 ## Next separate plans once central services are authorized
 
@@ -88,3 +88,11 @@
 5. Secure one-time SSO and WhatsApp/IA service connection.
 
 These are **dependent projects**, not fake stages that can be called complete before backend/service evidence exists.
+
+## Evidence from this delivery
+
+- Browser test RED: GitHub Actions E2E run `35528329820`, 1 failed / 7 passed, missing Saboriza link.
+- Browser test GREEN: E2E run `35528433690`, success.
+- Catalog mapper test RED: app-ci run `35528546576`, missing `./catalogMapping` module; 65 existing tests passed.
+- Mapper GREEN: app-ci run `35528631836`, success; E2E `35528631858`, success; Engine integrity `35528631942`, success.
+- This first delivery deliberately does not activate the production Supabase gateway, modify Saboriza, or claim shared authentication.
