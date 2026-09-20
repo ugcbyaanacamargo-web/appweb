@@ -113,6 +113,7 @@ export function Shell(props: ShellProps) {
                   <button
                     key={item.key}
                     className={active ? 'drawer-item active' : 'drawer-item'}
+                    aria-current={active ? 'page' : undefined}
                     onClick={() => handleItem(item.key)}
                   >
                     <span className="menu-glyph" aria-hidden="true">{item.glyph}</span>

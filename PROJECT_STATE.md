@@ -199,3 +199,21 @@ Never put secret/service-role keys in frontend or chat.
 - `docs/ACCEPTANCE_MATRIX.md`
 - `src/infrastructure/orisGateway.ts`
 - `src/infrastructure/gatewayFactory.ts`
+
+
+## Aurora follow-up — live local overview (2026-09-20)
+
+The user's request for a futuristic interactive redesign was already shipped by another concurrent branch while `feature/oris360-futuristic-mobile-design` was being developed. The conflicting design PR #13 was closed without merge to avoid replacing the latest Aurora CSS.
+
+This additive follow-up is isolated on `feature/aurora-order-overview` based on Aurora main commit `820110a423e8503c7f46c994d10bc70c824fe066`.
+
+Scope:
+- real local document/unsent/sent totals on the Pedidos page, no backend traffic and no third tab;
+- accessible `aria-current=page` for selected navigation item;
+- a small Aurora-matched CSS component only, retaining the existing Aurora visual system;
+- mobile E2E for overview/count update and current menu item;
+- production smoke requires both Aurora CSS token `--iris-night` and unique overview JS text `SEU DIA EM MOVIMENTO`.
+
+Do not merge the superseded broad CSS branch. This follow-up has no changes to pricing, stock, manual sync, Saboriza integration, local history or offline behavior.
+
+Verify latest GitHub Actions and public Netlify before recording release evidence.

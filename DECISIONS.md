@@ -213,3 +213,12 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** A generic marker in older JS could pass while the Netlify site still served outdated CSS.
 
 **Consequence:** A visual release cannot be declared deployed from an unrelated marker; the production gate checks the requested visual asset itself.
+
+
+## 2026-09-20 — Keep Aurora and derive order overview strictly from local documents
+
+**Decision:** Preserve the shipped Aurora design and add a small operation overview to Pedidos using only documents from the active local device/user/company scope.
+
+**Reason:** A simultaneous visual redesign had already landed on main. Replacing it with another broad stylesheet would risk regressions and duplicate visual rules. The seller benefits from clear status counts without another server-dependent dashboard.
+
+**Consequence:** Exactly two Pedidos tabs remain; overview counters are informational and recomputed from local data, including unsent state. Production smoke must match the new overview and Aurora stylesheet. Accessibility includes `aria-current` for active navigation.
