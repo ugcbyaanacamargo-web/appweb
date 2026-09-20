@@ -73,7 +73,7 @@ export function Shell(props: ShellProps) {
           <span className="hamburger" aria-hidden="true">☰</span>
         </button>
         <div className="topbar-title">
-          <strong>{title}</strong>
+          <div className="topbar-heading"><span className="topbar-kicker">ÓRIS360° / VENDAS</span><strong>{title}</strong></div>
           <span className={online ? 'network online' : 'network offline'}>
             {online ? 'Online' : 'Offline'}
           </span>
@@ -113,6 +113,7 @@ export function Shell(props: ShellProps) {
                   <button
                     key={item.key}
                     className={active ? 'drawer-item active' : 'drawer-item'}
+                    aria-current={active ? 'page' : undefined}
                     onClick={() => handleItem(item.key)}
                   >
                     <span className="menu-glyph" aria-hidden="true">{item.glyph}</span>
