@@ -217,3 +217,43 @@ test('Sistema Online oferece acesso seguro ao Saboriza sem prometer login DEMO c
   await expect(link).toHaveAttribute('target', '_blank');
   await expect(page.getByText('A conta DEMO não autentica no Saboriza.')).toBeVisible();
 });
+
+
+test('design mobile exibe resumo real e mantém apenas as duas abas de pedidos', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await enterDemoCompany(page);
+  await closeMenu(page);
+
+  const overview = page.getByRole('region', { name: 'Resumo da operação local' });
+  await expect(overview).toBeVisible();
+  await expect(overview.getByText('Neste aparelho')).toBeVisible();
+  await expect(overview.getByText('Pendentes')).toBeVisible();
+  await expect(overview.getByText('Enviados')).toBeVisible();
+  await expect(page.getByRole('tab')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Novo orçamento' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Novo orçamento' }).click();
+  await expect(page.getByRole('button', { name: 'ADICIONAR PRODUTOS' })).toBeDisabled();
+});
+
+test('menu visual mantém foco ativo e fecha com Escape sem mudar a operação', async ({ page }) => {
+  await enterDemoCompany(page);
+  const menu = page.getByRole('dialog', { name: 'Menu principal' });
+  await expect(menu.getByRole('button', { name: 'Pedidos', exact: true })).toHaveAttribute('aria-current', 'page');
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await menu.getByRole('button', { name: 'Produtos', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Produtos', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  await expect(menu.getByRole('button', { name: 'Produtos', exact: true })).toHaveAttribute('aria-current', 'page');
+});
+
+test('efeitos respeitam preferência de reduzir movimentos', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const duration = await page.locator('.landing-orb').first().evaluate(element =>
+    getComputedStyle(element).animationDuration
+  );
+  expect(duration).toBe('1e-05s');
+});
