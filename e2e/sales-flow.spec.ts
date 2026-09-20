@@ -237,6 +237,10 @@ test('design mobile exibe resumo real e mantém apenas as duas abas de pedidos',
 
   await page.getByRole('button', { name: 'Novo orçamento' }).click();
   await expect(page.getByRole('button', { name: 'ADICIONAR PRODUTOS' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Voltar', exact: true }).click();
+  await expect(overview.locator('.overview-metrics > div').nth(0)).toContainText('1');
+  await expect(overview.locator('.overview-metrics > div').nth(1)).toContainText('1');
+  await expect(overview.locator('.overview-metrics > div').nth(2)).toContainText('0');
 });
 
 test('menu visual mantém foco ativo e fecha com Escape sem mudar a operação', async ({ page }) => {
