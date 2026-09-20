@@ -851,3 +851,81 @@ button:disabled { transform: none !important; box-shadow: none !important; }
   }
   .document-card::after { transition: none !important; }
 }
+
+
+/* Aurora / device-local operation overview — additive, no global theme overrides. */
+.operation-overview {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 204px;
+  padding: 20px;
+  border: 1px solid rgba(158, 248, 214, .22);
+  border-radius: 24px;
+  color: #f3fffc;
+  background:
+    radial-gradient(circle at 96% -12%, rgba(112, 245, 201, .35), transparent 49%),
+    linear-gradient(125deg, #102939, #15473c 100%);
+  box-shadow: 0 24px 49px rgba(1, 10, 25, .25), inset 0 1px rgba(255,255,255,.13);
+}
+.operation-overview::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  width: 185px;
+  height: 185px;
+  top: -74px;
+  right: -46px;
+  border: 1px solid rgba(182, 255, 225, .27);
+  border-radius: 50%;
+  box-shadow: 0 0 0 34px rgba(160, 255, 219, .045), 0 0 0 66px rgba(160, 255, 219, .03);
+  animation: auroraTurn 28s linear infinite;
+}
+.overview-heading { display: flex; align-items: center; justify-content: space-between; }
+.operation-overview .eyebrow { color: #a1ffdb; }
+.overview-glow {
+  font-size: 21px;
+  color: #a3fcdc;
+  text-shadow: 0 0 16px rgba(136, 255, 215, .62);
+}
+.overview-title {
+  font-size: clamp(21px, 6vw, 27px);
+  letter-spacing: -.055em;
+  line-height: 1.15;
+}
+.operation-overview p {
+  margin: 0;
+  max-width: 285px;
+  color: #c2ddd7;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding-top: 15px;
+  margin-top: 5px;
+  border-top: 1px solid rgba(200, 255, 232, .18);
+}
+.overview-metrics > div { display: grid; gap: 4px; min-width: 0; }
+.overview-metrics strong {
+  font-size: 23px;
+  color: #d3ffec;
+  letter-spacing: -.05em;
+  line-height: 1;
+}
+.overview-metrics span { color: #c5e0d9; font-size: 10px; }
+@media (min-width: 700px) {
+  .operation-overview { min-height: 225px; padding: 26px 30px; }
+  .overview-metrics { max-width: 510px; }
+}
+@media (max-width: 360px) {
+  .overview-metrics span { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .operation-overview::after { animation: none !important; }
+}
