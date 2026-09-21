@@ -1,4 +1,4 @@
-# Óris360° — Integração real com Saboriza/Supabase
+> **HISTÓRICO SUPERADO — NÃO EXECUTAR COMO ARQUITETURA ATIVA (2026-09-20).** O usuário determinou que o App, os painéis web e o backend Óris360° devem existir apenas em `ugcbyaanacamargo-web/appweb`, publicados em `https://oris360-site.netlify.app/`. Nenhum serviço ou portal Saboriza faz parte da implementação autorizada. Fonte atual: [projeto](../PROJECT_STATE.md) e [especificação dos painéis internos](./superpowers/specs/2026-09-20-internal-oris360-panels-design.md).\n\n# Óris360° — Integração real com Saboriza/Supabase
 
 Autoridade funcional: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
 
