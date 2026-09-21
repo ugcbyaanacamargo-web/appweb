@@ -231,3 +231,22 @@ Durable decisions for the appweb project. Append new decisions; do not silently 
 **Reason:** Prompt Mestre section 44 requires a seller-facing Reports/Commissions page accessible directly on the site with the same credentials; sections 43/45 require operational/team/online permissions. The current Saboriza public source has `/admin` routes but no seller-specific web area.
 
 **Consequence:** Build seller web routes and company/seller role enforcement in the Saboriza Sistema Online; never expose the admin panel indiscriminately or append an eleventh menu item to the mobile App. Seller central document views are online-only; mobile document history remains device-local.
+
+
+## 2026-09-20 — SUPERSEDING DECISION: all Óris360° panels and commercial backend belong in appweb
+
+**Decision:** The user explicitly revoked the Saboriza integration direction. The mobile seller App, online seller panel, owner/company admin panel, and any required central backend are all first-party Óris360° code in `ugcbyaanacamargo-web/appweb`, published on `https://oris360-site.netlify.app/`.
+
+**Supersedes:** the earlier entries about Saboriza as Sistema Online, Saboriza/Supabase gateway, Saboriza portal link/SSO and seller panel residing in Saboriza. Preserve those records only as chronological history; do not use them to direct implementation.
+
+**Reason:** No access to Saboriza is part of this project. The user specifically required independent panels and a complete first-party sales ecosystem on the repository and site already being developed.
+
+**Consequence:** Internal routes `/empresa` and `/vendedor`, with the mobile PWA at `/`. No Saboriza outbound links, credential requests or backend dependency. Implement actual shared backend/Auth/RBAC/storage for production within the Óris360° architecture, not faux shared localStorage. Retain the Prompt Mestre’s 10 mobile menu options, offline isolation and explicit document send.
+
+## 2026-09-20 — First panels delivery DEMO storage boundary
+
+**Decision:** Enable tested product management and central vendor views in the existing browser-scoped DEMO gateway only while no authorized shared database is available.
+
+**Reason:** The user can exercise product → save → manual synchronization → offline sale now without pretending that credentials or cloud services exist. Using a hard-coded DEMO owner is acceptable only when clearly labeled; it is never real authorization.
+
+**Consequence:** Every company panel shows DEMO/local-only limitations, rejects seller-role product administration in the demo gateway, validates product name/SKU/price/stock/photo and preserves separation by company. A production profile explicitly shows unavailable administration until server-side Auth/RBAC/persistence are built and tested.
