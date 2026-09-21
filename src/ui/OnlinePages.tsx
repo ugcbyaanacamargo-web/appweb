@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { SellerReport, WhatsappIntegrationStatus } from '../domain/models';
 import { useRuntime } from '../app/AppContext';
 import { pageRequiresOnline, type MainPage } from './menu';
-import { integrationStorage, loadIntegrationConfig } from '../infrastructure/integrationConfig';
 
 function OnlineGate({
   page,
@@ -98,58 +97,28 @@ export function Reports() {
   );
 }
 
-const SABORIZA_LOGIN_URL = 'https://saboriza-catalogo.vercel.app/admin/login';
-
-export function OnlineSystem({ onConfigureIntegration }: { onConfigureIntegration: () => void }) {
+export function OnlineSystem({ onOpenPanel }: { onOpenPanel: () => void }) {
   const runtime = useRuntime();
-  const demoMode = loadIntegrationConfig(integrationStorage()).mode === 'demo';
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const open = async () => {
-    if (!runtime.online) return;
-    setBusy(true);
-    setMessage('');
-    try {
-      const session = await runtime.gateway.createOnlineSession(runtime.gatewayContext);
-      if (session.available && session.url && openSafeExternalUrl(session.url)) return;
-      setMessage(session.message || 'O backend ainda não forneceu uma sessão integrada do Sistema Online.');
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Não foi possível abrir o Sistema Online.');
-    } finally {
-      setBusy(false);
-    }
-  };
+  const admin = runtime.company.role === 'owner' || runtime.company.role === 'admin';
 
   return (
     <section className="stack page-section">
       <div className="hero-copy compact">
-        <span className="eyebrow">SISTEMA ONLINE</span>
+        <span className="eyebrow">SISTEMA ONLINE ÓRIS360°</span>
         <h1>Sistema Online</h1>
-        <p>Acesse o painel Saboriza. O login integrado só será usado quando a conexão oficial da sua conta estiver disponível.</p>
+        <p>Seu App e seus painéis pertencem ao mesmo Óris360°, sem abrir plataformas de terceiros.</p>
       </div>
       <OnlineGate page="online">
         <div className="info-card">
-          <strong>Entrar no painel da empresa</strong>
-          <p>{demoMode ? 'A conta DEMO não autentica no Saboriza.' : 'Enquanto a sessão integrada não estiver disponível, pode ser necessário entrar novamente no Saboriza.'}</p>
-          <a
-            className="button secondary"
-            href={SABORIZA_LOGIN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >ACESSAR PAINEL SABORIZA</a>
-          <p>Para entrar sem digitar a senha novamente, a integração oficial precisa emitir uma sessão de uso único.</p>
-          <button className="button primary" disabled={busy} onClick={open}>
-            {busy ? 'ABRINDO…' : 'ABRIR SISTEMA ONLINE'}
+          <strong>{admin ? 'Painel da empresa' : 'Painel do vendedor'}</strong>
+          <p>{admin
+            ? 'Gerencie o catálogo da empresa no ambiente Óris360°. Esta primeira etapa usa o ambiente DEMO até haver backend central de produção.'
+            : 'Consulte os seus resultados e documentos enviados no painel do vendedor Óris360°.'}</p>
+          <button className="button primary" onClick={onOpenPanel}>
+            {admin ? 'ABRIR PAINEL DA EMPRESA' : 'ABRIR PAINEL DO VENDEDOR'}
           </button>
+          <p>O histórico central do painel não é baixado para o histórico local do App de Vendas.</p>
         </div>
-        {message && (
-          <div className="info-card warning-card">
-            <strong>Integração ainda não disponível</strong>
-            <p>{message}</p>
-            <button className="button secondary" onClick={onConfigureIntegration}>CONFIGURAR API</button>
-          </div>
-        )}
       </OnlineGate>
     </section>
   );

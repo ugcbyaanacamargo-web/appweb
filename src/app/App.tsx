@@ -20,6 +20,8 @@ import {
 import { RuntimeContext, type NoticeTone } from './AppContext';
 import { Shell } from '../ui/Shell';
 import { Orders } from '../ui/Orders';
+import { CompanyPanel } from '../ui/CompanyPanel';
+import { SellerPanel } from '../ui/SellerPanel';
 import { Customers } from '../ui/Customers';
 import { Products } from '../ui/Products';
 import { Missions } from '../ui/Missions';
@@ -31,6 +33,13 @@ import { ForgotPassword } from '../ui/ForgotPassword';
 import type { MainPage } from '../ui/menu';
 
 type Stage = 'landing' | 'login' | 'register' | 'forgot' | 'integration' | 'companies' | 'app';
+type Workspace = 'mobile' | 'seller' | 'company';
+
+function workspaceFromPath(pathname: string): Workspace {
+  if (pathname === '/empresa') return 'company';
+  if (pathname === '/vendedor') return 'seller';
+  return 'mobile';
+}
 
 interface ActiveRuntime {
   auth: AuthResult;
@@ -153,6 +162,22 @@ function AuthCard({
 
 export function App() {
   const [stage, setStage] = useState<Stage>('landing');
+  const [workspace, setWorkspace] = useState<Workspace>(() => workspaceFromPath(window.location.pathname));
+  const navigateWorkspace = useCallback((next: Workspace) => {
+    const path = next === 'company' ? '/empresa' : next === 'seller' ? '/vendedor' : '/';
+    window.history.pushState(null, '', path);
+    setWorkspace(next);
+    setMenuOpen(false);
+    setDocumentId(null);
+    setPage('orders');
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => { setWorkspace(workspaceFromPath(window.location.pathname)); setMenuOpen(false); };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
   const [auth, setAuth] = useState<AuthResult | null>(null);
   const [active, setActive] = useState<ActiveRuntime | null>(null);
   const [page, setPage] = useState<MainPage | 'editor'>('orders');
@@ -274,7 +299,7 @@ export function App() {
       window.history.replaceState(null, '', window.location.pathname + window.location.hash);
     }
     setDocumentId(null);
-    setMenuOpen(true);
+    setMenuOpen(window.location.pathname === '/');
     saveLiveSession(sessionStorage, { auth: sessionAuth, activeCompanyId: companyId });
 
     if (readOnline()) {
@@ -595,6 +620,14 @@ export function App() {
         </div>
       </div>
     );
+  } else if (stage === 'app' && active && runtimeValue && workspace !== 'mobile') {
+    content = (
+      <RuntimeContext.Provider value={runtimeValue}>
+        {workspace === 'company'
+          ? <CompanyPanel onBack={() => navigateWorkspace('mobile')} />
+          : <SellerPanel onBack={() => navigateWorkspace('mobile')} onCompanyPanel={() => navigateWorkspace('company')} />}
+      </RuntimeContext.Provider>
+    );
   } else if (stage === 'app' && active && runtimeValue) {
     const pageNode =
       page === 'orders' ? <Orders onNew={newDocument} onOpen={openDocument} /> :
@@ -603,7 +636,7 @@ export function App() {
       page === 'missions' ? <Missions /> :
       page === 'whatsapp' ? <WhatsappAI onConfigureIntegration={() => setStage('integration')} /> :
       page === 'reports' ? <Reports /> :
-      page === 'online' ? <OnlineSystem onConfigureIntegration={() => setStage('integration')} /> :
+      page === 'online' ? <OnlineSystem onOpenPanel={() => navigateWorkspace(active.company.role === 'owner' || active.company.role === 'admin' ? 'company' : 'seller')} /> :
       page === 'help' ? <Help /> :
       documentId ? <QuoteEditor documentId={documentId} onBack={() => { setPage('orders'); setDocumentId(null); }} onOpenDocument={openDocument} /> :
       <Orders onNew={newDocument} onOpen={openDocument} />;

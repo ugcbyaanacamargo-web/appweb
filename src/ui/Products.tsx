@@ -48,7 +48,10 @@ export function ProductCatalog({ selectionMode = false, quantities = {}, onQuant
           const quantity = quantities[product.id] ?? 0;
           return (
             <article className="product-card" key={product.id}>
-              <div className="product-art" aria-hidden="true">{product.name.slice(0, 1).toUpperCase()}</div>
+              <div className="product-art">{product.imageUrl
+                ? <img src={product.imageUrl} alt={'Foto de ' + product.name} loading="lazy" className="catalog-product-photo" />
+                : <span aria-hidden="true">{product.name.slice(0, 1).toUpperCase()}</span>}
+              </div>
               <div className="product-copy">
                 <span className="eyebrow">{product.sku}</span>
                 <strong>{product.name}</strong>

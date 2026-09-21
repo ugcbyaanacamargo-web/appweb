@@ -19,7 +19,7 @@ jobs:
           set -euo pipefail
           site="https://oris360-site.netlify.app/"
           # The marker must identify this release; the previous generic marker matched a stale deploy.
-          expected_marker="SEU DIA EM MOVIMENTO"
+          expected_marker="Painel da empresa Óris360°"
           expected_css_marker="--iris-night"
 
           for attempt in $(seq 1 30); do

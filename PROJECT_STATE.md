@@ -1,237 +1,69 @@
 # Project State
 
 Last updated: 2026-09-20
+Source of truth: AGENTS.md → docs/brain/INDEX.md → this file → DECISIONS.md
 
-## Current phase
+## Product and repository
 
-**First approved Óris360° ↔ Saboriza delivery merged and verified on the public Netlify site. The actual Saboriza/Supabase data integration is NOT active.**
+Óris360° is developed **exclusively** in `ugcbyaanacamargo-web/appweb`.
 
-The canonical functional source remains:
+Public site: `https://oris360-site.netlify.app/`.
+Functional contract: `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`.
+Visual design: `docs/design/AURORA.md`.
 
-- `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
+**Explicit user correction, 2026-09-20:** Saboriza is NOT the Óris360° Sistema Online or backend. Do not create/modify panels there, redirect users to it, request its credentials or depend on its Supabase. Older Saboriza architecture artifacts are archival only and must not direct future implementation.
 
-The current integration design is:
+Canonical internal-panels design: `docs/superpowers/specs/2026-09-20-internal-oris360-panels-design.md`.
+Phase-one plan: `docs/superpowers/plans/2026-09-20-internal-panels-first-slice.md`.
 
-- `docs/superpowers/specs/2026-09-19-oris360-complete-platform-design.md`
+## Product surfaces and business rules
 
-The Saboriza gap matrix is:
+1. `/`: existing mobile sales PWA, fixed ten-menu structure, offline-first, user/company/device/realm isolation, manual commercial sync, **explicit-only** Quote/Order sends, local-only document history.
+2. `/vendedor`: separate online web panel for the authenticated seller, same site/identity and current company.
+3. `/empresa`: separate company-admin web panel for owners/admins, same site/identity and current company.
 
-- `docs/SABORIZA_ADAPTATION_MATRIX.md`
+New web panels are NOT extra entries in the fixed mobile menu. The existing `Sistema Online` action routes within Óris360°, according to the user's role. Sales documents do not enter mobile history from the online area.
 
-## Production and App baseline
+## Current development checkpoint
 
-Production App:
-- `https://oris360-site.netlify.app/`
+Branch: `feature/oris360-internal-panels`.
 
-Known verified seller-app baseline:
-- offline-first PWA;
-- fixed ten-item menu;
-- device/user/company/integration-realm isolation;
-- local Quotes/Orders;
-- explicit send;
-- idempotency contract;
-- sent-document lock;
-- manual transactional commercial sync;
-- offline customers;
-- Missions client;
-- Reports / Sistema Online / WhatsApp behind gateway;
-- generic HTTP integration setup;
-- CI + Playwright infrastructure.
+Implemented in the branch:
+- company roles in `CompanyRef`, DEMO owner identity and role-aware company administration;
+- company DEMO manual product CRUD (name, SKU, price, stock, description, active, image), browser-local persistence, input validation and company isolation;
+- vendor DEMO web report and read-only seller-scoped sent documents;
+- photo field in product model, product photos displayed after local commercial sync;
+- internal `/empresa` and `/vendedor` routing, back to the existing mobile App and history handling;
+- Saboriza external login removed from the App's Sistema Online screen;
+- Playwright browser tests, DEMO gateway unit tests, production smoke release marker for company panel.
 
-The existing 24 Prompt Mestre acceptance criteria remain mapped in:
-- `docs/ACCEPTANCE_MATRIX.md`
+These are **DEMO capabilities**, NOT a shared production backend. The DEMO data remain within the same browser. Do not claim synchronization across physical devices, real server-side RBAC or cloud image storage.
 
-## Real System Online target
+Latest verified branch HEAD before further changes: `20269fbdb604e726a64d91894958c16d34b4b340`:
+- engine integrity `35545616413`: success;
+- app-ci `35545616410`: success;
+- browser E2E `35545616390`: success.
+Any further changes require fresh per-SHA verification. No production/Netlify publication may be claimed until merge and production smoke confirm the new panel marker.
 
-The user identified:
+## Work that still MUST be implemented in appweb
 
-- `https://saboriza-catalogo.vercel.app/`
+- real first-party Óris360° backend in this repository (Netlify Functions or another explicitly authorized service) with persistent shared database and authenticated image storage;
+- registration/7-day-trial, real Auth and company memberships, server-enforced owner/admin/seller RBAC and lifecycle;
+- full products/catalog/categories/media/unit and pack price/stock contracts;
+- company-admin clients, seller enrollment, seller portfolios, commissions and assignments;
+- first commercial snapshot per scope with image caching and transactional offline base;
+- idempotent Quote/Order APIs, official sequence, actual stock adjustment and authorized central views;
+- Missions assignment/admin, push sender, location/map, seller reports;
+- online session handoff, centrally configured Help and WhatsApp/AI integration;
+- true security, multi-company and multi-device integration/E2E coverage.
 
-Read-only inspection confirmed a matching public repository:
-- `Ruanzinn01/Saboriza-Catalogo`
+No secret/service-role keys in frontend or GitHub. Do not replace genuine server persistence with DEMO localStorage and call it real multi-device functionality.
 
-The inspected source declares the same Vercel production URL.
+## Verify/release
 
-## Saboriza capabilities already available
+- `.github/workflows/app-ci.yml` — audit/lint/Vitest/build/PWA;
+- `.github/workflows/e2e.yml` — browser user flows;
+- `.github/workflows/engine-integrity.yml` — project graph and skills;
+- `.github/workflows/production-smoke.yml` — deployed release marker and Aurora CSS.
 
-The public source currently contains:
-
-- Supabase Auth for admin;
-- admin panel;
-- products;
-- categories;
-- customers;
-- suppliers;
-- orders;
-- order items;
-- coupons;
-- indicators;
-- settings;
-- public catalog/Delivery;
-- checkout;
-- RPCs `create_order` and `update_order_items`.
-
-## Architectural decision
-
-Óris360° remains the **seller/mobile/offline client**.
-
-Saboriza remains the **Sistema Online/company-admin system**.
-
-Do not build a second product/customer/order admin inside appweb.
-
-The production integration should evolve from the generic HTTP setup to a dedicated Saboriza/Supabase adapter behind `OrisGateway`.
-
-## Confirmed Saboriza gaps relative to the Prompt Mestre
-
-Not proven in the public schema/source:
-
-- multi-company memberships;
-- seller profiles;
-- seller commission;
-- customer portfolio by seller;
-- CPF + CNPJ central model;
-- official calculated stock source exposed to the App;
-- allow-sale-without-stock setting;
-- central Quote representation;
-- server idempotency for Óris360° documents;
-- transactional commercial snapshot;
-- account/trial/block state;
-- Missions/assignments/evidence;
-- Push subscriptions/server sender;
-- team location/map;
-- seller-scoped report;
-- one-time SSO handoff;
-- central Óris360° Help contacts;
-- WhatsApp/AI integration state contract.
-
-These are backend/integration gaps. They must not be hidden by frontend mocks.
-
-## Delivered integration milestones
-
-- PR #9 merged: official Saboriza admin login link, honest SSO availability, strict product mapping, approved spec/plan/integration matrix.
-- PR #10 merged: production smoke now checks the new Saboriza button instead of an old generic marker.
-- `main` now includes commits `1888e88c43ccf5368de9aee38c54087592d05de2` and `09f065abae8d289901a37d42b78f36072d0fd223`.
-- Verified production bundle after release: `/assets/index-CXhatpMT.js`, containing `ACESSAR PAINEL SABORIZA`.
-- Saboriza source remains read-only; no database migration or API secrets have been applied.
-
-## Design and first implementation phase
-
-The user approved the written integration spec on 2026-09-20. The first-delivery plan is `docs/superpowers/plans/2026-09-20-saboriza-first-integration.md`.
-
-Implemented and test-driven; released to the public App:
-- explicit external link to official Saboriza admin login without claiming shared DEMO authentication;
-- SSO launch now requires `available: true` and a safe URL;
-- strict Saboriza product mapper requiring verified stock/SKU and rejecting unsupported pack conversions;
-- browser E2E regression and Vitest mapper tests.
-
-Verified on merged `main` SHA `09f065abae8d289901a37d42b78f36072d0fd223`:
-- Engine integrity run `35529210819`: success;
-- app-ci run `35529210769`: dependency audit, lint, Vitest, production build and PWA/Netlify artifacts successful;
-- Playwright run `35529210775`: success;
-- production-smoke run `35529210749`: success against the exact Saboriza UI marker and deployed bundle.
-
-These checks validate the first shipped slice, **not** real company ↔ seller data synchronization.
-
-Not implemented: actual Supabase Auth integration, backend snapshot/RPC, client sync against Saboriza, cross-device sales, one-time SSO and WhatsApp webhook. Do not describe these as completed.
-
-## Implementation direction after approval
-
-Preserve Prompt Mestre phases:
-
-1. Foundation — Saboriza gateway/auth/membership/first snapshot.
-2. Commercial operation — customer/product/catalog/price/stock mapping.
-3. Transmission — client upsert, quote/order, idempotency, official number.
-4. Sync — pending clients, transactional snapshot, blocked-account behavior.
-5. Integrations — Missions, push, location, reports/commission, SSO, Help, WhatsApp/AI.
-
-## Óris360° Aurora visual refresh — 2026-09-20
-
-The user requested a modern/futuristic interactive overhaul of the existing App, without changing the closed master business rules.
-
-Released through PR #12, merged to `main` as `820110a423e8503c7f46c994d10bc70c824fe066` and verified on Netlify.
-
-Visual-only implementation:
-- atmospheric midnight/aurora shell and auth entry;
-- refined light commercial cards, hierarchy, buttons, active drawer, toasts and floating action;
-- responsive spacing and visible keyboard focus;
-- hover/touch microinteractions and page entrance animations;
-- explicit reduced-motion override.
-
-No business-domain, Dexie, gateway or remote-integration behavior was changed.
-
-Evidence from feature HEAD `326ab8fc0a6b887d339f231e7727a7da9c9affd7`:
-- app-ci `35540800891`: success (audit/lint/Vitest/build/PWA);
-- Playwright `35540800900`: success (including new mobile visual/reduced-motion acceptance);
-- Engine integrity `35540800889`: success.
-After merge to `main` commit `820110a423e8503c7f46c994d10bc70c824fe066`, all four gates passed:
-- engine `35541162285`;
-- app-ci `35541162289`;
-- Playwright `35541162262`;
-- production smoke `35541162284`.
-
-Production smoke inspected deployed JavaScript `/assets/index-DYa2MGNb.js` and the redesigned stylesheet `/assets/index-DbhvZFZ1.css`, confirming `ACESSAR PAINEL SABORIZA` and CSS marker `--iris-night`. This is release-specific evidence, not merely a generic PWA marker.
-
-`docs/design/AURORA.md` is the permanent visual reference.
-Production smoke now must inspect the CSS marker `--iris-night` and the existing Saboriza JS marker to prevent an old Netlify deploy from passing.
-
-Real Saboriza/Supabase data integration remains pending; visual change does not pretend to resolve it.
-
-## External inputs required before real production integration
-
-- Saboriza Supabase project URL;
-- Supabase publishable key;
-- authorized access for migrations/RLS/RPC/Edge Functions;
-- safe test environment or explicit production-change procedure;
-- official Help contacts;
-- official commission eligibility rule;
-- server-side VAPID/WhatsApp/AI secrets only when those phases are implemented.
-
-Never put secret/service-role keys in frontend or chat.
-
-## Relevant entry points
-
-- `AGENTS.md`
-- `docs/brain/INDEX.md`
-- `docs/specs/ORIS360_SALES_APP_MASTER_SPEC.txt`
-- `docs/superpowers/specs/2026-09-19-oris360-complete-platform-design.md`
-- `docs/SABORIZA_ADAPTATION_MATRIX.md`
-- `docs/API_INTEGRATION.md`
-- `docs/ACCEPTANCE_MATRIX.md`
-- `src/infrastructure/orisGateway.ts`
-- `src/infrastructure/gatewayFactory.ts`
-
-
-## Aurora follow-up — live local overview (2026-09-20)
-
-The user's request for a futuristic interactive redesign was already shipped by another concurrent branch while `feature/oris360-futuristic-mobile-design` was being developed. The conflicting design PR #13 was closed without merge to avoid replacing the latest Aurora CSS.
-
-This additive follow-up is isolated on `feature/aurora-order-overview` based on Aurora main commit `820110a423e8503c7f46c994d10bc70c824fe066`.
-
-Scope:
-- real local document/unsent/sent totals on the Pedidos page, no backend traffic and no third tab;
-- accessible `aria-current=page` for selected navigation item;
-- a small Aurora-matched CSS component only, retaining the existing Aurora visual system;
-- mobile E2E for overview/count update and current menu item;
-- production smoke requires both Aurora CSS token `--iris-night` and unique overview JS text `SEU DIA EM MOVIMENTO`.
-
-Do not merge the superseded broad CSS branch. This follow-up has no changes to pricing, stock, manual sync, Saboriza integration, local history or offline behavior.
-
-Verify latest GitHub Actions and public Netlify before recording release evidence.
-
-
-## Full product and panel gap audit — 2026-09-20
-
-The user clarified that product completion requires a **separate seller web panel**, all company ↔ seller workflows, and end-to-end functionality beyond the existing mobile UI. Complete code-grounded read-only gap audit:
-
-- `docs/product/2026-09-20-complete-platform-gap-audit.md`.
-
-Important correction to prior broad statements: the inspected Saboriza source already contains a manual product form and ONE product image uploader using Supabase Storage (`product-images`). These features must be reused, not duplicated inside appweb. However, the appweb Product model/catalog has no image field or offline image cache, Saboriza has no seller-specific web route discovered, and the cross-system API is not live.
-
-Product surfaces:
-- appweb = fixed ten-menu offline-first seller mobile PWA;
-- Saboriza /admin = existing company/admin control panel, needs Óris-specific seller/team controls;
-- Saboriza seller-only web area = NOT IMPLEMENTED in inspected source; separate authorization/routes needed, not another mobile menu item.
-
-The audit is based on repository code and earlier CI evidence; interactive public-site navigation and live Supabase RLS/API access could not be executed in this runtime. Do not claim the missing real backend/seller panel works.
-
-Next architectural cycle: decompose foundation/roles, commercial product/media+catalog/snapshot, document transmission, dedicated seller web panel, Missions/team and subscription/integrations into independently testable specifications and plans. Follow Superpowers design-review gate; the earlier Saboriza integration spec cannot by itself prove a written implementation plan for these newly recognized subsystems.
+Historical reference: earlier Saboriza PRs and archived docs explain why the prior design was superseded; they are NOT active integration instructions.
